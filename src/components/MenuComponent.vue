@@ -21,7 +21,7 @@
                 
                 <div class="divider"></div>
 
-                <img src="@/assets/images/icon_add.svg" alt="add" width="40px" class="icon-img"/>
+                <img src="@/assets/images/icon_add.svg" alt="add" width="40px" class="icon-img" @click="createRoom"/>
             </div>
             <div class="menu-list-user">
                 <img src="@/assets/images/icon_user.svg" alt="user" width="40px" class="icon-img" @click="goProfile"/>
@@ -36,7 +36,7 @@ import { ref, defineEmits } from 'vue';
 const activeHome = ref(true);
 const activeChat = ref(false);
 const activeProfile = ref(false);
-const emit = defineEmits(['goMenuItem'])
+const emit = defineEmits(['goMenuItem', 'createRoom'])
 
 const goHome = () => {
     if(activeHome.value) {
@@ -69,6 +69,10 @@ const goProfile = () => {
     activeHome.value = false;
     activeProfile.value = true;
     emit('goMenuItem', {data : "Profile"});
+}
+
+const createRoom = () => {
+    emit('createRoom')
 }
 </script>
 

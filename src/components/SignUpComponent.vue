@@ -46,8 +46,11 @@ const login = () => {
         return;
     }
 
-    axios.get(`/api/user/login?userId=${userId.value}&password=${userPw.value}`)
-        .then(() => goHome())
+    axios.get(`/user/login?userId=${userId.value}&password=${userPw.value}`)
+        .then(() => {
+            localStorage.setItem("id", userId.value);
+            goHome()
+        })
         .catch((error) => alert("로그인 실패~!" + error));
 }
 

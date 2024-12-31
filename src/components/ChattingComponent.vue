@@ -52,7 +52,8 @@
 
                 <ul class="user-list">
                     <li class="user" v-for="(user, index) in userList" :key="index" :class="{'last-item' : index === userList.length - 1}" v-ripple>
-                        <img src="@/assets/images/icon_chat_user.svg" alt="user" width="40px"/> {{ user.name }}
+                        <img src="@/assets/images/icon_chat_user.svg" alt="user" width="40">
+                        {{ user.name }}
                     </li>
                 </ul>
             </div>
@@ -84,16 +85,16 @@
             <div ref="chatField" class="chat-field">
                 <div class="chat" v-for="message in messageList" :key="message.id">
                     <div class="chat-info">
-                        <div class="chat-user" v-if="message.type === 'receive'">
+                        <div class="chat-user" v-if="myId !== message.userId">
                             <img src="@/assets/images/icon_chat_user.svg" width="40px" alt="user" />
                         </div>
 
-                        <div class="chat-container" :class="message.type">
-                            <div class="user-name">{{ message.name }}</div>
+                        <div class="chat-container" :class="myId === message.userId ? 'send' : 'receive'">
+                            <div class="user-name">{{ message.userName }}</div>
                             <div class="chat-content">
-                                <div v-html="message.msg.replace(/\n/g, '<br/>')"></div>
+                                <div v-html="message.message.replace(/\n/g, '<br/>')"></div>
                             </div>
-                            <div class="chat-time">{{ message.time }}</div>
+                            <div class="chat-time">{{ formatDateToTime(message.sendDate) }}</div>
                         </div>
                         
                     </div>
@@ -121,8 +122,10 @@
 </template>
 
 <script setup>
-import { ref, nextTick, defineProps, watch } from 'vue';
+import { ref, nextTick, defineProps, watch, onMounted } from 'vue';
+import axios from '@/plugins/axiosInstance';
 
+const myId = ref(null);
 const userInput = ref("");
 const chatField = ref(null)
 const chatMenu = ref(false);
@@ -132,6 +135,8 @@ const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
 
+const messageList = ref([]);
+
 const props = defineProps({
     id : {
         type : Number,
@@ -139,10 +144,43 @@ const props = defineProps({
     },
 })
 
+onMounted(() => {
+    myId.value = localStorage.getItem("id");
+    chatRoomId.value = props.id;
+    axios.get(`/chat/rooms/${chatRoomId.value}/messages`)
+            .then((response) => {
+                console.log(response);
+                messageList.value = response.data.chatList;
+                userList.value = response.data.userList;
+
+                nextTick(() => {
+                    if (chatField.value) {
+                        chatField.value.scrollTop = chatField.value.scrollHeight;
+                    }
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+            })
+})
+
 watch(
     () => props.id,
     (newId) => {
         chatRoomId.value = newId;
+        axios.get(`/chat/rooms/${chatRoomId.value}/messages`)
+            .then((response) => {
+                messageList.value = response.data.chatList;
+
+                nextTick(() => {
+                    if (chatField.value) {
+                        chatField.value.scrollTop = chatField.value.scrollHeight;
+                    }
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+            })
 })
 
 watch(showSearch, (isShow) => {
@@ -152,22 +190,6 @@ watch(showSearch, (isShow) => {
         })
     }
 })
-
-const messageList = ref([
-    {
-        id : 0,
-        type : "receive",
-        msg : "님아",
-        name : "이름",
-        time : "오전 09:43",
-    },
-    {
-        id : 1,
-        type : "send",
-        msg : "?",
-        time : "오전 09:43",
-    }
-])
 
 const userList = ref([
 {
@@ -240,6 +262,24 @@ const handleKeyUp = (event) => {
     }
 };
 
+const formatDateToTime = (date) => {
+    const dateArr = date.split("T");
+    const timeArr = dateArr[1].split(":");
+
+    const time = Number(timeArr[0]);
+    const minute = Number(timeArr[1]);
+
+    const amPm = time < 12 ? "오전" : "오후";
+
+    if(amPm === "오전") {
+        return amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
+    } else {
+        return time === 12 ? amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0)
+                           : amPm + " " + (time % 12).toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
+    }
+
+}
+
 const send = () => {
     if(!userInput.value.trim()){
         return
@@ -249,8 +289,9 @@ const send = () => {
 
     const newMsgObj = {
         id : newIdx,
-        type : "send",
-        msg : userInput.value.trim(),
+        userId : myId,
+        message : userInput.value.trim(),
+        sendDate : "2024-12-30T16:24:22.886963",
     }
 
     userInput.value = "";
@@ -406,7 +447,7 @@ const send = () => {
     overflow-y: auto;
 }
 
-.user {
+.user-list .user {
     width : 100%;
     display : flex;
     align-items: center;
@@ -416,6 +457,12 @@ const send = () => {
     background-color: #EDF0F9;
     border-radius : 16px;
     cursor: pointer;
+    transition : all 0.2s ease;
+}
+
+.user-list .user:hover {
+    background-color: var(--primary);
+    color : #fff;
 }
 
 .last-item {
@@ -471,12 +518,13 @@ const send = () => {
 
 .chatting-box {
     width : 100%;
+    max-height : 608px;
     margin : 24px 0 16px 0;
     box-sizing : border-box;
-    padding : 16px 0 16px 16px;
+    padding : 0 0 16px 16px;
     flex-grow: 1;
     background-color: #EDF0F9;
-    border-radius: 24px;
+    border-radius: 24px 0 24px 24px;
     display : flex;
     flex-direction: column; /* 메시지를 위에서 아래로 배치 */
     overflow: hidden;
@@ -499,8 +547,11 @@ const send = () => {
     display : flex;
     flex-direction: column;
     overflow-y: auto;
-    margin : 8px 0;
-    padding-right : 16px;
+    padding : 8px 0 16px 0;
+}
+
+.chat {
+    margin-bottom : 8px;
 }
 
 .chat-info {
@@ -570,6 +621,10 @@ const send = () => {
 
 .chat-container.receive {
     margin-left : 16px;
+}
+
+.chat-container.send {
+    margin-right : 16px;
 }
 
 .send {

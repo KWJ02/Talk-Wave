@@ -98,7 +98,7 @@ const signIn = () => {
         "deptId" : deptId.value,
     }
 
-    axios.post('/api/user/register', jsonData)
+    axios.post('/user/register', jsonData)
     .then(() => {
         alert("회원가입 성공!");
         sendEmit("SignUp");

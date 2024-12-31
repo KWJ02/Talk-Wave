@@ -7,21 +7,21 @@
 
         <div class="chat-room-list-container">
 
-            <div class="chat-room-list" v-for="(item, index) in chatList" :key="index" @click="activeItem(item.id)"
-                :class="{'active-room' : pointer === item.id, 'last-item' : index === chatList.length - 1}">
+            <div class="chat-room-list" v-for="(item, index) in chatList" :key="index" @click="activeItem(item.roomId, index)"
+                :class="{'active-room' : pointer === index, 'last-item' : index === chatList.length - 1}">
                 <div class="user-profile">
                     <img :src="changeProfile(pointer === index)" alt="user"/>
                 </div>
 
                 <div class="chat-section">
                     <div class="chat-title-section">
-                        <div class="chat-title">{{ item.title }}</div>
-                        <div class="chat-time">{{ item.time }}</div>
+                        <div class="chat-title">{{ item.roomName }}</div>
+                        <div class="chat-time">{{ remainTime(item.sendDate) }}</div>
                     </div>
 
                     <div class="chat-description-section">
                         <div class="chat-description">
-                            {{ item.description }}
+                            {{ item.latestMessage }}
                         </div>
                     </div>
                 </div>
@@ -32,11 +32,19 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, onMounted, defineProps } from 'vue';
+import axios from '@/plugins/axiosInstance'
 import profile from '@/assets/images/icon_chat_user.svg'
 import activeProfile from '@/assets/images/icon_chat_user_active.svg'
 
 const pointer = ref(0);
+defineProps({
+    id : {
+        type : Number,
+        required : true,
+    }
+})
+
 const emit = defineEmits(['roomActive']);
 
 const changeProfile = (result) => {
@@ -47,49 +55,48 @@ const changeProfile = (result) => {
     }
 }
 
-const chatList = ref([
-    {
-        id : 0,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-    {
-        id : 1,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-    {
-        id : 2,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-    {
-        id : 3,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-    {
-        id : 4,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-    {
-        id : 5,
-        title : "이름",
-        time : "오후 5:02",
-        description : "내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용내용",
-    },
-])
+const chatList = ref([])
 
-const activeItem = (id) => {
-    pointer.value = id;
-    emit('roomActive', {id:pointer.value})
+const activeItem = (id, idx) => {
+    pointer.value = idx;
+    emit('roomActive', { id: id })
 }
+
+const remainTime = (date) => {
+    const now = new Date();
+    const sendDate = new Date(date);
+
+    const diff = now - sendDate;
+    const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor((diff % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30));
+    const days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (years > 0) {
+        return `${years}년 전`;
+    } else if (months > 0) {
+        return `${months}개월 전`;
+    } else if (days > 0) {
+        return `${days}일 전`;
+    } else if (hours > 0) {
+        return `${hours}시간 전`;
+    } else if (minutes > 0) {
+        return `${minutes}분 전`;
+    } else {
+        return '방금 전';
+    }
+}
+
+onMounted(() => {
+    axios.get('/chat/rooms')
+        .then((response) => {
+            chatList.value = response.data;
+        })
+        .catch((error) => {
+            console.error(error);
+        })
+})
     
 </script>
 
@@ -99,7 +106,7 @@ const activeItem = (id) => {
 }
 
 .root-chat-list {
-    margin : 44px 0 0 16px;
+    margin : 44px 0 0 0;
     width : 320px;
     display : flex;
     flex-direction: column;
