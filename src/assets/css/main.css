@@ -1,0 +1,40 @@
+@font-face {
+    font-family: 'Pretendard';
+    font-weight: normal;
+    font-style: normal;
+    src: local("Pretendard"), url("../font/Pretendard-Regular.woff2") format("woff2");
+}
+
+:root {
+    --font-pretendard: "Pretendard";
+    --normal: #000000;
+    --primary: #6785FF;
+    --secondary: #0d6db7;
+    --accent: #f77d7d;
+}
+
+html,
+body {
+    font-family: var(--font-pretendard);
+    color: var(--normal);
+    margin: 0;
+    padding: 0;
+    min-width: 340px;
+    word-break: break-all;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    box-shadow: 0 0 0px 1000px #fff inset;
+}
+
+input:autofill,
+input:autofill:hover,
+input:autofill:focus,
+input:autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    box-shadow: 0 0 0px 1000px #fff inset;
+}
