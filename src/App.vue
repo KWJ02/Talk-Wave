@@ -63,7 +63,7 @@ const create = () => {
         return
     }
 
-    axios.post(`/chat/rooms?name=${roomName.value}`)
+    axios.post(`/chat/rooms?name=${roomName.value}&userId=${localStorage.getItem("talk-wave-id")}`)
         .then(() => {
             isCreate.value = false;
         })

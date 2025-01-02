@@ -1,7 +1,7 @@
 <template>
     <div class="root-chat">
-        <chat-list-component :id="chattingId" @roomActive="sendId"/>
-        <chatting-component v-if="chattingId" :id="chattingId"/>
+        <chat-list-component :id="chattingId" @roomActive="sendId" :chat-rooms="chatRooms" @updateMessage="updateMessage"/>
+        <chatting-component v-if="chattingId" :id="chattingId" @newMessage="updateMessage"/>
     </div>
 </template>
 
@@ -10,12 +10,24 @@ import ChatListComponent from './ChatListComponent.vue';
 import ChattingComponent from './ChattingComponent.vue';
 import { ref, onMounted } from 'vue';
 import axios from '@/plugins/axiosInstance'
+import { remainTime } from '@/plugins/formatDate';
 
 const chattingId = ref(null);
 const chatRooms = ref([]);
 
 const sendId = (data) => {
     chattingId.value = data.id;
+}
+
+const updateMessage = (newMessage) => {
+    const roomIndex = chatRooms.value.findIndex(room => room.roomId === chattingId.value);
+    if (roomIndex !== -1) {
+        const updatedRooms = [...chatRooms.value];
+        updatedRooms[roomIndex].latestMessage = newMessage.message;
+        updatedRooms[roomIndex].sendDate = remainTime(newMessage.sendDate);
+        const [movedRoom] = updatedRooms.splice(roomIndex, 1);
+        chatRooms.value = [movedRoom, ...updatedRooms];
+    }
 }
 
 onMounted(() => {
