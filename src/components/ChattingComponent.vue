@@ -126,6 +126,7 @@ import { ref, nextTick, defineProps, watch, onMounted, onUnmounted } from 'vue';
 import axios from '@/plugins/axiosInstance';
 import { Client } from '@stomp/stompjs';
 import { formatDateToTime } from '@/plugins/formatDate';
+import { useWebNotification } from '@vueuse/core';
 
 const baseURL = process.env.VUE_APP_API_URL;
 const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
@@ -141,6 +142,7 @@ const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
 const stompClient = ref(null);
+let { show } = useWebNotification();
 
 const messageList = ref([]);
 const userList = ref([])
@@ -153,7 +155,7 @@ const props = defineProps({
 })
 
 onMounted(() => {
-    myId.value = localStorage.getItem("id");
+    myId.value = localStorage.getItem("talk-wave-id");
     chatRoomId.value = props.id;
     connectAndSubscribe();
     loadInitialData();
@@ -165,6 +167,27 @@ onUnmounted(() => {
     }
 });
 
+show = ({title, body}) => {
+    if (!('Notification' in window)) {
+        console.error('This browser does not support notifications.');
+        return null;
+    }
+
+    // 알림 권한 확인
+    if (Notification.permission === 'granted') {
+        return new Notification(title, { body });
+    } else if (Notification.permission !== 'denied') {
+        // 권한 요청
+        return Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                return new Notification(title, { body });
+            }
+            return null;
+        });
+    }
+    return null;
+}
+
 const connectAndSubscribe = () => {
     stompClient.value = new Client({
         brokerURL: wsUrl,
@@ -174,15 +197,39 @@ const connectAndSubscribe = () => {
     });
 
     stompClient.value.onConnect = () => {
-        console.log('Connected to STOMP');
-
-        console.log(stompClient.value);
-        console.log(stompClient.value.subscribe);
-        
         // Subscribe to room messages
         stompClient.value.subscribe(`/room/${chatRoomId.value}`, (message) => {
             const messageOutput = JSON.parse(message.body);
             showMessage(messageOutput);
+            
+            if (document.hidden) { // 페이지 안보고있으면 알림
+                const notificationPromise = show({
+                    title: messageOutput.userName,
+                    body: messageOutput.message,
+                });
+
+                // `show()`가 Promise를 반환하는 경우 처리
+                if (notificationPromise instanceof Promise) {
+                    notificationPromise.then((notification) => {
+                        if (notification) {
+                            setTimeout(() => {
+                                if (notification.close) {
+                                    notification.close(); // 알림 닫기
+                                }
+                            }, 1000);
+                        }
+                    });
+                } else if (notificationPromise) {
+                    // `show()`가 동기적으로 `Notification` 객체를 반환하는 경우
+                    setTimeout(() => {
+                        if (notificationPromise.close) {
+                            notificationPromise.close(); // 알림 닫기
+                        }
+                    }, 1000);
+                } else {
+                    console.error('Failed to create notification.');
+                }
+            }
         });
     };
 
@@ -505,8 +552,8 @@ const send = () => {
 
 .chatting-box {
     width : 100%;
-    max-height : 608px;
-    margin : 24px 0 16px 0;
+    flex : 1;
+    margin : 8px 0 16px 0;
     box-sizing : border-box;
     padding : 0 0 16px 16px;
     flex-grow: 1;

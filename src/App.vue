@@ -12,12 +12,13 @@
             <v-dialog max-width="500" height="240" v-model="isCreate" persistent="true">
                 <v-card title="방 생성">
                     <v-card-text>
-                        <input type="text" name="title" id="title" class="input-title" placeholder="방제목 입력해주세요."/>
+                        <input type="text" name="title" id="title" class="input-title" v-model.trim="roomName"
+                            placeholder="방제목 입력해주세요." @keyup.enter="create"/>
                     </v-card-text>
 
                     <div class="btn-section">
                         <div class="btn-cancel" @click="isCreate = false" v-ripple>닫기</div>
-                        <div class="btn-quit" @click="create" v-ripple>만들기</div>
+                        <div class="btn-create" @click="create" v-ripple>만들기</div>
                     </div>
                 </v-card>
             </v-dialog>
@@ -33,9 +34,11 @@ import HomeComponent from './components/HomeComponent.vue';
 import MenuComponent from './components/MenuComponent.vue';
 import ChatComponent from './components/ChatComponent.vue';
 import ProfileComponent from './components/ProfileComponent.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from '@/plugins/axiosInstance';
 
 const pointer = ref("SignUp");
+const roomName = ref("");
 const isCreate = ref(false);
 
 const sendEmit = (payload) => {
@@ -47,6 +50,7 @@ const goMenuItem = (payload) => {
 }
 
 const logout = (payload) => {
+    localStorage.removeItem("talk-wave-id");
     pointer.value = payload.data;
 }
 
@@ -55,8 +59,24 @@ const createDialog = () => {
 }
 
 const create = () => {
-    
+    if(!roomName.value) {
+        return
+    }
+
+    axios.post(`/chat/rooms?name=${roomName.value}`)
+        .then(() => {
+            isCreate.value = false;
+        })
+        .catch((error) => {
+            console.error(error);
+        })
 }
+
+onMounted(() => {
+    if(localStorage.getItem("talk-wave-id")){
+        pointer.value = "Home";
+    }
+})
 </script>
 
 <style scoped>
@@ -71,5 +91,37 @@ const create = () => {
 
 .full-size {
     width : 100%;
+}
+
+.input-title {
+    width : 100%;
+    outline : none;
+    border : none;
+}
+
+.btn-section {
+    display : flex;
+    gap : 24px;
+    padding : 0 24px 12px 24px;
+}
+
+.btn-section > div {
+    flex : 1;
+    flex-shrink : 0;
+    display : flex;
+    justify-content: center;
+}
+
+.btn-cancel {
+    background-color: #B6BEC8;
+    padding : 8px;
+    border-radius: 12px;
+}
+
+.btn-create {
+    background-color: var(--primary);
+    color : #fff;
+    padding : 8px;
+    border-radius: 12px;
 }
 </style>
