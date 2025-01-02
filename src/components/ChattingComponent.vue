@@ -5,8 +5,8 @@
                 <div class="chatting-title-section" v-if="!showSearch">
                     <div class="chatting-title">
                         <img src="@/assets/images/icon_chat_user.svg" alt="user" width="40px">
-                        <div class="title">이름 : {{ id }}</div>
-                        <span class="count">2</span>
+                        <div class="title">{{ roomName }}</div>
+                        <span class="count">{{ userList.length }}</span>
                     </div>
                     <div class="chatting-fn">
                         <img src="@/assets/images/icon_chatting_search.svg" alt="search" class="icon-img" @click="showSearch = !showSearch">
@@ -53,7 +53,7 @@
                 <ul class="user-list">
                     <li class="user" v-for="(user, index) in userList" :key="index" :class="{'last-item' : index === userList.length - 1}" v-ripple>
                         <img src="@/assets/images/icon_chat_user.svg" alt="user" width="40">
-                        {{ user.name }}
+                        {{ user.userName }}
                     </li>
                 </ul>
             </div>
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="chat-container" :class="myId === message.userId ? 'send' : 'receive'">
-                            <div class="user-name">{{ message.userName }}</div>
+                            <div class="user-name" :class="myId === message.userId ? 'my-message' : ''"> {{ message.userName }}</div>
                             <div class="chat-content">
                                 <div v-html="message.message.replace(/\n/g, '<br/>')"></div>
                             </div>
@@ -122,20 +122,28 @@
 </template>
 
 <script setup>
-import { ref, nextTick, defineProps, watch, onMounted } from 'vue';
+import { ref, nextTick, defineProps, watch, onMounted, onUnmounted } from 'vue';
 import axios from '@/plugins/axiosInstance';
+import { Client } from '@stomp/stompjs';
+import { formatDateToTime } from '@/plugins/formatDate';
+
+const baseURL = process.env.VUE_APP_API_URL;
+const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
 
 const myId = ref(null);
 const userInput = ref("");
-const chatField = ref(null)
+const chatField = ref(null);
 const chatMenu = ref(false);
 const chatRoomId = ref(0)
+const roomName = ref("")
 const showSearch = ref(false);
 const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
+const stompClient = ref(null);
 
 const messageList = ref([]);
+const userList = ref([])
 
 const props = defineProps({
     id : {
@@ -147,41 +155,74 @@ const props = defineProps({
 onMounted(() => {
     myId.value = localStorage.getItem("id");
     chatRoomId.value = props.id;
+    connectAndSubscribe();
+    loadInitialData();
+})
+
+onUnmounted(() => {
+    if (stompClient.value && stompClient.value.connected) {
+        stompClient.value.deactivate();
+    }
+});
+
+const connectAndSubscribe = () => {
+    stompClient.value = new Client({
+        brokerURL: wsUrl,
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+    });
+
+    stompClient.value.onConnect = () => {
+        console.log('Connected to STOMP');
+
+        console.log(stompClient.value);
+        console.log(stompClient.value.subscribe);
+        
+        // Subscribe to room messages
+        stompClient.value.subscribe(`/room/${chatRoomId.value}`, (message) => {
+            const messageOutput = JSON.parse(message.body);
+            showMessage(messageOutput);
+        });
+    };
+
+    stompClient.value.onStompError = (frame) => {
+        console.error('STOMP error', frame);
+    };
+
+    stompClient.value.activate();
+};
+
+const loadInitialData = () => {
     axios.get(`/chat/rooms/${chatRoomId.value}/messages`)
-            .then((response) => {
-                console.log(response);
-                messageList.value = response.data.chatList;
-                userList.value = response.data.userList;
+        .then((response) => {
+            roomName.value = response.data.roomName;
+            messageList.value = response.data.chatList;
+            userList.value = response.data.userList;
 
-                nextTick(() => {
-                    if (chatField.value) {
-                        chatField.value.scrollTop = chatField.value.scrollHeight;
-                    }
-                });
-            })
-            .catch((error) => {
-                console.error(error);
-            })
-})
+            nextTick(() => {
+                if (chatField.value) {
+                    chatField.value.scrollTop = chatField.value.scrollHeight;
+                }
+            });
+        })
+        .catch((error) => {
+            console.error(error);
+        });
+};
 
-watch(
-    () => props.id,
-    (newId) => {
-        chatRoomId.value = newId;
-        axios.get(`/chat/rooms/${chatRoomId.value}/messages`)
-            .then((response) => {
-                messageList.value = response.data.chatList;
-
-                nextTick(() => {
-                    if (chatField.value) {
-                        chatField.value.scrollTop = chatField.value.scrollHeight;
-                    }
-                });
-            })
-            .catch((error) => {
-                console.error(error);
-            })
-})
+watch(() => props.id, (newId) => {
+    chatRoomId.value = newId;
+    
+    // Unsubscribe from old room if necessary
+    if (stompClient.value && stompClient.value.connected) {
+        stompClient.value.deactivate();
+    }
+    
+    // Connect to new room
+    connectAndSubscribe();
+    loadInitialData();
+});
 
 watch(showSearch, (isShow) => {
     if(isShow) {
@@ -190,57 +231,6 @@ watch(showSearch, (isShow) => {
         })
     }
 })
-
-const userList = ref([
-{
-        id : 0,
-        name : "엄준식",
-    },
-    {
-        id : 1,
-        name : "엄준식",
-    },
-    {
-        id : 2,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-    {
-        id : 3,
-        name : "엄준식",
-    },
-])
 
 const handleKeyDown = (event) => {
   if (!event.shiftKey && event.key === "Enter") {
@@ -262,48 +252,45 @@ const handleKeyUp = (event) => {
     }
 };
 
-const formatDateToTime = (date) => {
-    const dateArr = date.split("T");
-    const timeArr = dateArr[1].split(":");
-
-    const time = Number(timeArr[0]);
-    const minute = Number(timeArr[1]);
-
-    const amPm = time < 12 ? "오전" : "오후";
-
-    if(amPm === "오전") {
-        return amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
-    } else {
-        return time === 12 ? amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0)
-                           : amPm + " " + (time % 12).toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
+// 메시지 표시
+function showMessage(chatMessage) {
+    const newMessage = {
+        message : chatMessage.message,
+        sendDate : chatMessage.sendDate,
+        userId : chatMessage.userId,
+        userName : chatMessage.userName,
     }
-
-}
-
-const send = () => {
-    if(!userInput.value.trim()){
-        return
-    }
-
-    const newIdx = messageList.value.at(-1) !== undefined ? messageList.value.at(-1).id + 1 : 0;
-
-    const newMsgObj = {
-        id : newIdx,
-        userId : myId,
-        message : userInput.value.trim(),
-        sendDate : "2024-12-30T16:24:22.886963",
-    }
-
-    userInput.value = "";
-    messageList.value.push(newMsgObj);
+    
+    messageList.value.push(newMessage)
 
     nextTick(() => {
         const chat = chatField.value;
-          if (chat) {
+        if (chat) {
             chat.scrollTop = chat.scrollHeight;
-          }
-    })
+        }
+    });
 }
+
+const send = () => {
+    if (!userInput.value.trim()) {
+        return;
+    }
+
+    const messageData = {
+        roomId: chatRoomId.value,
+        message: userInput.value.trim(),
+        userId: myId.value,
+    };
+
+    if (stompClient.value && stompClient.value.connected) {
+        stompClient.value.publish({
+            destination: '/send/message',
+            body: JSON.stringify(messageData)
+        });
+
+        userInput.value = "";
+    }
+};
 </script>
 
 <style scoped>
@@ -625,6 +612,10 @@ const send = () => {
 
 .chat-container.send {
     margin-right : 16px;
+}
+
+.my-message {
+    display : none;
 }
 
 .send {
