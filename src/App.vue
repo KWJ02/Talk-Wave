@@ -51,7 +51,7 @@ import HomeComponent from './components/HomeComponent.vue';
 import MenuComponent from './components/MenuComponent.vue';
 import ChatComponent from './components/ChatComponent.vue';
 import ProfileComponent from './components/ProfileComponent.vue';
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from '@/plugins/axiosInstance';
 
 const pointer = ref("SignUp");
@@ -60,10 +60,6 @@ const isCreate = ref(false);
 const userList = ref([])
 const selectUserList = ref([])
 const myId = ref("");
-
-watch(() => selectUserList.value, (newList) => {
-  console.log('선택된 사용자 목록:', newList);
-});
 
 const sendEmit = (payload) => {
     pointer.value = payload.data;
@@ -141,7 +137,6 @@ onMounted(() => {
     axios.get('/dept')
         .then((res) => {
             userList.value = res.data
-            console.log(userList.value);
         })
         .catch((error) => {
             console.error(error);

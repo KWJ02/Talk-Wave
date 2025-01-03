@@ -42,7 +42,6 @@ onMounted(() => {
     myId.value = localStorage.getItem('talk-wave-id');
     axios.get(`/chat/rooms?userId=${myId.value}`).then((response) => {
         chatRooms.value = response.data; // 방 목록을 chatRooms에 저장
-        console.log(chatRooms.value)
         if (chatRooms.value.length > 0) {
             chattingId.value = chatRooms.value[0].roomId; // 첫 번째 방의 roomId를 기본값으로 설정
         }
