@@ -56,6 +56,10 @@ const props = defineProps({
     updateMessage: { // 부모 컴포넌트로부터 전달된 updateChatList를 props로 받기
         type: Function,
         required: true,
+    },
+    updateChatList: {
+        type: Function,
+        required: true,
     }
 })
 

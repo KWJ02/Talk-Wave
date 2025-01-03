@@ -32,7 +32,11 @@ const extendedAxios = {
             method: 'post',
             url,
             data,
-            config,
+            headers: {
+                'Content-Type': 'application/json', // 여기에 추가
+                ...config.headers // 기존 설정이 있다면 병합
+            },
+            ...config
         });
     },
     get(url) {

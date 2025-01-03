@@ -9,12 +9,29 @@
             <chat-component v-if="pointer === 'Chat'" class="full-size"/>
             <profile-component v-if="pointer === 'Profile'" class="full-size" @logout="logout"/>
 
-            <v-dialog max-width="500" height="240" v-model="isCreate" persistent="true">
+            <v-dialog max-width="500" height="600" v-model="isCreate" persistent="true">
                 <v-card title="방 생성">
                     <v-card-text>
                         <input type="text" name="title" id="title" class="input-title" v-model.trim="roomName"
                             placeholder="방제목 입력해주세요." @keyup.enter="create"/>
                     </v-card-text>
+
+                    <div class="invite-user-list-container">
+                        초대할 사람 : {{ selectUserList.length > 0 ? selectUserList.map(id => getUserNameById(id)).join(", ") : '' }}
+                    </div>
+
+                    <div class="invite-container">
+                        <div class="grade-list" v-for="grade in userList" :key="grade.deptId">
+                            <div class="grade">{{ grade.name }}</div>
+                            <div class="list-section">
+                                <div class="grade-user-list" v-for="user in grade.userInfoList" :key="user.userId">
+                                    <label :for="`${user.userId}`">
+                                        <input type="checkbox" v-model="selectUserList" :id="`${user.userId}`" :value="user.userId" /> {{ user.userName }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="btn-section">
                         <div class="btn-cancel" @click="isCreate = false" v-ripple>닫기</div>
@@ -34,12 +51,19 @@ import HomeComponent from './components/HomeComponent.vue';
 import MenuComponent from './components/MenuComponent.vue';
 import ChatComponent from './components/ChatComponent.vue';
 import ProfileComponent from './components/ProfileComponent.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from '@/plugins/axiosInstance';
 
 const pointer = ref("SignUp");
 const roomName = ref("");
 const isCreate = ref(false);
+const userList = ref([])
+const selectUserList = ref([])
+const myId = ref("");
+
+watch(() => selectUserList.value, (newList) => {
+  console.log('선택된 사용자 목록:', newList);
+});
 
 const sendEmit = (payload) => {
     pointer.value = payload.data;
@@ -58,14 +82,50 @@ const createDialog = () => {
     isCreate.value = true;
 }
 
+const getUserNameById = (userId) => {
+    // userList에서 userId에 해당하는 user를 찾아서 userName을 반환
+    for (const grade of userList.value) {
+      const user = grade.userInfoList.find(user => user.userId === userId);
+      if (user) {
+        return user.userName;
+      }
+    }
+    return '';
+  }
+
 const create = () => {
-    if(!roomName.value) {
+    if(!myId.value) {
+        alert("아이디없음")
         return
     }
 
-    axios.post(`/chat/rooms?name=${roomName.value}&userId=${localStorage.getItem("talk-wave-id")}`)
+    if(!roomName.value) {
+        alert("방이름없음")
+        return
+    }
+
+    if(!selectUserList.value) {
+        alert("초대는 1명이상 필수")
+        return
+    }
+
+    const jsonData = {
+        roomName : roomName.value,
+        userId : myId.value,
+        userList : selectUserList.value
+    }
+
+    axios.post(`/chat/rooms`,JSON.stringify(jsonData), {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
         .then(() => {
             isCreate.value = false;
+            roomName.value = "";
+            selectUserList.value = [];
+
+            pointer.value = "Chat"
         })
         .catch((error) => {
             console.error(error);
@@ -73,9 +133,19 @@ const create = () => {
 }
 
 onMounted(() => {
-    if(localStorage.getItem("talk-wave-id")){
+    myId.value = localStorage.getItem("talk-wave-id")
+    if(myId.value){
         pointer.value = "Home";
     }
+
+    axios.get('/dept')
+        .then((res) => {
+            userList.value = res.data
+            console.log(userList.value);
+        })
+        .catch((error) => {
+            console.error(error);
+        })
 })
 </script>
 
@@ -93,10 +163,46 @@ onMounted(() => {
     width : 100%;
 }
 
+:deep(.v-dialog > .v-overlay__content) {
+    justify-content: center;
+}
+
 .input-title {
     width : 100%;
     outline : none;
     border : none;
+}
+
+.invite-user-list-container {
+    padding : 0 24px 12px 24px;
+}
+
+.invite-container {
+    display : flex;
+    flex-direction: column;
+    padding : 0 24px;
+    gap : 12px;
+    margin-bottom : 12px;
+}
+
+.grade-list {
+    width : 100%;
+    box-sizing: border-box;
+    display : flex;
+    flex-direction: column;
+    justify-content: start;
+    border: solid 2px #000000;
+    border-radius : 8px;
+}
+
+.grade {
+    border-radius: 8px;
+    background-color: #B6BEC8;
+    padding : 12px;
+}
+
+.list-section {
+    padding : 12px;
 }
 
 .btn-section {

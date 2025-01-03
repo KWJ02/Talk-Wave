@@ -102,7 +102,7 @@
 
                 <div class="btn-section">
                     <div class="btn-cancel" @click="quitDialog = false" v-ripple>닫기</div>
-                    <div class="btn-quit" @click="quitDialog = false" v-ripple>나가기</div>
+                    <div class="btn-quit" @click="quitChattingRoom" v-ripple>나가기</div>
                 </div>
             </v-card>
         </v-dialog>
@@ -168,6 +168,7 @@ const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
 const stompClient = ref(null);
+let currentSubscription = null;
 let { show } = useWebNotification();
 
 const messageList = ref([]);
@@ -180,18 +181,31 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits(['newMessage'])
+const emit = defineEmits(['newMessage', 'quitChattingRoom'])
 
 onMounted(() => {
+
+    stompClient.value = new Client({
+        brokerURL: wsUrl,
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        maxReconnectAttempts: 5, 
+    });
+
     myId.value = localStorage.getItem("talk-wave-id");
     chatRoomId.value = props.id;
-    connectAndSubscribe();
+
     loadInitialData();
+    connectAndSubscribe();
+
+    stompClient.value.activate();
 })
 
 onUnmounted(() => {
-    if (stompClient.value && stompClient.value.connected) {
+    if (stompClient.value) {
         stompClient.value.deactivate();
+        stompClient.value = null;
     }
 });
 
@@ -216,30 +230,46 @@ show = ({title, body}) => {
     return null;
 }
 
+watch(() => props.id, (newId) => {
+    if (stompClient.value?.connected) {
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+        }
+    }
+
+    // 2. 새로운 방 ID 설정
+    chatRoomId.value = newId;
+
+    loadInitialData();
+
+    // 3. 새로운 방에 연결
+    if (stompClient.value?.connected) {
+        subscribeToNewRoom();
+    } else {
+        // 연결이 끊어진 상태라면 재연결
+        stompClient.value.activate();
+        subscribeToNewRoom();
+    }
+});
+
 const connectAndSubscribe = () => {
-    stompClient.value = new Client({
-        brokerURL: wsUrl,
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
-    });
-
     stompClient.value.onConnect = () => {
-        // Subscribe to room messages
-        stompClient.value.publish({
-            destination: '/join',
-            body: JSON.stringify({
-                roomId : chatRoomId.value,
-                userId : myId.value,
-            })
-        });
+        subscribeToNewRoom();
+    };
 
-        stompClient.value.subscribe(`/room/${chatRoomId.value}`, (message) => {
-            const messageOutput = JSON.parse(message.body);
-            showMessage(messageOutput);
-            emit('newMessage', messageOutput);
-            
-            if (document.hidden) { // 페이지 안보고있으면 알림
+    stompClient.value.onStompError = (frame) => {
+        console.error('STOMP error', frame);
+    };
+};
+
+const subscribeToNewRoom = () => {
+    // 새로운 방 구독
+    currentSubscription = stompClient.value.subscribe(`/room/${chatRoomId.value}`, (message) => {
+        const messageOutput = JSON.parse(message.body);
+        showMessage(messageOutput);
+        emit('newMessage', messageOutput);
+
+        if (document.hidden) { // 페이지 안보고있으면 알림
                 const notificationPromise = show({
                     title: messageOutput.userName,
                     body: messageOutput.message,
@@ -267,18 +297,11 @@ const connectAndSubscribe = () => {
                     console.error('Failed to create notification.');
                 }
             }
-        });
-    };
-
-    stompClient.value.onStompError = (frame) => {
-        console.error('STOMP error', frame);
-    };
-
-    stompClient.value.activate();
+    });
 };
 
 const loadInitialData = () => {
-    axios.get(`/chat/rooms/${chatRoomId.value}/messages`)
+    axios.get(`/chat/rooms/${chatRoomId.value.toString()}/messages`)
         .then((response) => {
             roomName.value = response.data.roomName;
             messageList.value = response.data.chatList;
@@ -294,19 +317,6 @@ const loadInitialData = () => {
             console.error(error);
         });
 };
-
-watch(() => props.id, (newId) => {
-    chatRoomId.value = newId;
-    
-    // Unsubscribe from old room if necessary
-    if (stompClient.value && stompClient.value.connected) {
-        stompClient.value.deactivate();
-    }
-    
-    // Connect to new room
-    connectAndSubscribe();
-    loadInitialData();
-});
 
 watch(showSearch, (isShow) => {
     if(isShow) {
@@ -375,6 +385,34 @@ const send = () => {
         userInput.value = "";
     }
 };
+
+const quitChattingRoom = () => {
+    quitDialog.value = false;
+    chatMenu.value = false;
+    
+    if (stompClient.value?.connected) {
+        const chatEventDTO = {
+            roomId: chatRoomId.value,
+            userId: myId.value
+        };
+
+
+        axios.post('/chat/rooms/leave', JSON.stringify(chatEventDTO), {
+            headers : {
+                "Content-Type" : "application/json",
+            }
+        }).then(() => {
+            emit('quitChattingRoom', {roomId : chatRoomId.value})
+        })
+        .catch((error) => console.error(error))
+
+        chatRoomId.value = null;
+        // 기존 구독 해제
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+        }
+    }
+}
 </script>
 
 <style scoped>
