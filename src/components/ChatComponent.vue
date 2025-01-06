@@ -10,19 +10,7 @@
 <script setup>
 import ChatListComponent from './ChatListComponent.vue';
 import ChattingComponent from './ChattingComponent.vue';
-import { ref, onUnmounted, provide } from 'vue';
-import { Client } from '@stomp/stompjs';
-
-const baseURL = process.env.VUE_APP_API_URL;
-const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
-
-const stompClient = new Client({
-    brokerURL: wsUrl,
-    reconnectDelay: 5000,
-    heartbeatIncoming: 4000,
-    heartbeatOutgoing: 4000,
-    maxReconnectAttempts: 5, 
-});
+import { ref } from 'vue';
 
 const chatRooms = ref([]);
 const chattingId = ref(null);
@@ -47,13 +35,6 @@ const receiveMessage = (payload) => {
         newMessage.value = payload.data;
     }
 }
-
-onUnmounted(() => {
-    stompClient.deactivate();
-});
-
-provide('stompClient', stompClient);
-stompClient.activate();
 </script>
 
 <style scoped>
