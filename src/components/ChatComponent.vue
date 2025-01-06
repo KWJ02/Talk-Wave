@@ -1,36 +1,40 @@
 <template>
     <div class="root-chat">
-        <chat-list-component :id="chattingId" @roomActive="sendId" :chat-rooms="chatRooms"
-            @updateMessage="updateMessage" @updateChatList="updateChatList"/>
+        <chat-list-component @roomActive="sendId" @initRooms="initRooms" @receiveMessage="receiveMessage" />
+
         <chatting-component v-if="chattingId" :id="chattingId"
-            @newMessage="updateMessage" @quitChattingRoom="updateChatList"/>
+            @quitChattingRoom="updateChatList" :newMessage="newMessage" />
     </div>
 </template>
 
 <script setup>
 import ChatListComponent from './ChatListComponent.vue';
 import ChattingComponent from './ChattingComponent.vue';
-import { ref, onMounted } from 'vue';
-import axios from '@/plugins/axiosInstance'
-import { remainTime } from '@/plugins/formatDate';
+import { ref, onUnmounted, provide } from 'vue';
+import { Client } from '@stomp/stompjs';
 
-const chattingId = ref(null);
+const baseURL = process.env.VUE_APP_API_URL;
+const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
+
+const stompClient = new Client({
+    brokerURL: wsUrl,
+    reconnectDelay: 5000,
+    heartbeatIncoming: 4000,
+    heartbeatOutgoing: 4000,
+    maxReconnectAttempts: 5, 
+});
+
 const chatRooms = ref([]);
-const myId = ref("");
+const chattingId = ref(null);
+const newMessage = ref([])
+// const recentMessage = ref([]) // 특정 방에서 메세지 입력됐을때
 
-const sendId = (data) => {
-    chattingId.value = data.id;
+const initRooms = (payload) => {
+    chatRooms.value = payload.rooms;
 }
 
-const updateMessage = (newMessage) => {
-    const roomIndex = chatRooms.value.findIndex(room => room.roomId === chattingId.value);
-    if (roomIndex !== -1) {
-        const updatedRooms = [...chatRooms.value];
-        updatedRooms[roomIndex].latestMessage = newMessage.message;
-        updatedRooms[roomIndex].sendDate = remainTime(newMessage.sendDate);
-        const [movedRoom] = updatedRooms.splice(roomIndex, 1);
-        chatRooms.value = [movedRoom, ...updatedRooms];
-    }
+const sendId = (payload) => {
+    chattingId.value = payload.id;
 }
 
 const updateChatList = (payload) => {
@@ -38,18 +42,18 @@ const updateChatList = (payload) => {
     chatRooms.value = chatRooms.value.filter((room) => room.roomId !== roomId);
 }
 
-onMounted(() => {
-    myId.value = localStorage.getItem('talk-wave-id');
-    axios.get(`/chat/rooms?userId=${myId.value}`).then((response) => {
-        chatRooms.value = response.data; // 방 목록을 chatRooms에 저장
-        if (chatRooms.value.length > 0) {
-            chattingId.value = chatRooms.value[0].roomId; // 첫 번째 방의 roomId를 기본값으로 설정
-        }
-    })
-    .catch((error) => {
-        console.error(error);
-    })
-})
+const receiveMessage = (payload) => {
+    if (chattingId.value === payload.id) {
+        newMessage.value = payload.data;
+    }
+}
+
+onUnmounted(() => {
+    stompClient.deactivate();
+});
+
+provide('stompClient', stompClient);
+stompClient.activate();
 </script>
 
 <style scoped>

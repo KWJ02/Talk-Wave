@@ -47,7 +47,7 @@
                     <div class="list-title">
                         참여인원
                     </div>
-                    <div class="list-count">20</div>
+                    <div class="list-count">{{ userList.length }}</div>
                 </div>
 
                 <ul class="user-list">
@@ -109,7 +109,7 @@
 
         <div class="chatting-box">
             <div ref="chatField" class="chat-field">
-                <div class="chat" v-for="message in messageList" :key="message.id">
+                <div class="chat" v-for="message in formattedMessages" :key="message.id">
                     <div class="chat-info">
                         <div class="chat-user" v-if="myId !== message.userId">
                             <img src="@/assets/images/icon_chat_user.svg" width="40px" alt="user" />
@@ -120,7 +120,7 @@
                             <div class="chat-content">
                                 <div v-html="message.message.replace(/\n/g, '<br/>')"></div>
                             </div>
-                            <div class="chat-time">{{ formatDateToTime(message.sendDate) }}</div>
+                            <div class="chat-time">{{ message.formattedSendDate }}</div>
                         </div>
                         
                     </div>
@@ -148,14 +148,9 @@
 </template>
 
 <script setup>
-import { ref, nextTick, defineProps, watch, onMounted, onUnmounted, defineEmits } from 'vue';
+import { ref, nextTick, defineProps, watch, onMounted, defineEmits, inject, computed } from 'vue';
 import axios from '@/plugins/axiosInstance';
-import { Client } from '@stomp/stompjs';
 import { formatDateToTime } from '@/plugins/formatDate';
-import { useWebNotification } from '@vueuse/core';
-
-const baseURL = process.env.VUE_APP_API_URL;
-const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
 
 const myId = ref(null);
 const userInput = ref("");
@@ -167,9 +162,10 @@ const showSearch = ref(false);
 const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
-const stompClient = ref(null);
+
+const stompClient = inject('stompClient')
+
 let currentSubscription = null;
-let { show } = useWebNotification();
 
 const messageList = ref([]);
 const userList = ref([])
@@ -179,133 +175,50 @@ const props = defineProps({
         type : Number,
         required : true,
     },
+    newMessage : {
+        type : Object,
+    }
 })
 
-const emit = defineEmits(['newMessage', 'quitChattingRoom'])
+const emit = defineEmits(['sendMessage', 'quitChattingRoom'])
 
 onMounted(() => {
-
-    stompClient.value = new Client({
-        brokerURL: wsUrl,
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
-        maxReconnectAttempts: 5, 
-    });
-
     myId.value = localStorage.getItem("talk-wave-id");
     chatRoomId.value = props.id;
 
-    loadInitialData();
-    connectAndSubscribe();
-
-    stompClient.value.activate();
+    loadInitialData(chatRoomId.value);
 })
 
-onUnmounted(() => {
-    if (stompClient.value) {
-        stompClient.value.deactivate();
-        stompClient.value = null;
-    }
+const formattedMessages = computed(() => {
+    return messageList.value.map((message) => ({
+    ...message,
+    formattedSendDate: formatDateToTime(message.sendDate),
+    }));
 });
 
-show = ({title, body}) => {
-    if (!('Notification' in window)) {
-        console.error('This browser does not support notifications.');
-        return null;
-    }
+watch(() => props.id, async (newId) => {
+    // 새로운 방 ID 설정
+    messageList.value = []
+    loadInitialData(newId);
+});
 
-    // 알림 권한 확인
-    if (Notification.permission === 'granted') {
-        return new Notification(title, { body });
-    } else if (Notification.permission !== 'denied') {
-        // 권한 요청
-        return Notification.requestPermission().then((permission) => {
-            if (permission === 'granted') {
-                return new Notification(title, { body });
-            }
-            return null;
-        });
-    }
-    return null;
-}
-
-watch(() => props.id, (newId) => {
-    if (stompClient.value?.connected) {
-        if (currentSubscription) {
-            currentSubscription.unsubscribe();
+watch(() => props.newMessage, (newMessage) => {
+    messageList.value.push(newMessage);
+    nextTick(() => {
+        if (chatField.value) {
+            chatField.value.scrollTop = chatField.value.scrollHeight;
         }
-    }
-
-    // 2. 새로운 방 ID 설정
-    chatRoomId.value = newId;
-
-    loadInitialData();
-
-    // 3. 새로운 방에 연결
-    if (stompClient.value?.connected) {
-        subscribeToNewRoom();
-    } else {
-        // 연결이 끊어진 상태라면 재연결
-        stompClient.value.activate();
-        subscribeToNewRoom();
-    }
-});
-
-const connectAndSubscribe = () => {
-    stompClient.value.onConnect = () => {
-        subscribeToNewRoom();
-    };
-
-    stompClient.value.onStompError = (frame) => {
-        console.error('STOMP error', frame);
-    };
-};
-
-const subscribeToNewRoom = () => {
-    // 새로운 방 구독
-    currentSubscription = stompClient.value.subscribe(`/room/${chatRoomId.value}`, (message) => {
-        const messageOutput = JSON.parse(message.body);
-        showMessage(messageOutput);
-        emit('newMessage', messageOutput);
-
-        if (document.hidden) { // 페이지 안보고있으면 알림
-                const notificationPromise = show({
-                    title: messageOutput.userName,
-                    body: messageOutput.message,
-                });
-
-                // `show()`가 Promise를 반환하는 경우 처리
-                if (notificationPromise instanceof Promise) {
-                    notificationPromise.then((notification) => {
-                        if (notification) {
-                            setTimeout(() => {
-                                if (notification.close) {
-                                    notification.close(); // 알림 닫기
-                                }
-                            }, 1000);
-                        }
-                    });
-                } else if (notificationPromise) {
-                    // `show()`가 동기적으로 `Notification` 객체를 반환하는 경우
-                    setTimeout(() => {
-                        if (notificationPromise.close) {
-                            notificationPromise.close(); // 알림 닫기
-                        }
-                    }, 1000);
-                } else {
-                    console.error('Failed to create notification.');
-                }
-            }
     });
-};
+})
 
-const loadInitialData = () => {
-    axios.get(`/chat/rooms/${chatRoomId.value.toString()}/messages`)
+
+const loadInitialData = (id) => {
+    axios.get(`/chat/rooms/${id}/messages`)
         .then((response) => {
             roomName.value = response.data.roomName;
             messageList.value = response.data.chatList;
             userList.value = response.data.userList;
+            chatRoomId.value = id;
 
             nextTick(() => {
                 if (chatField.value) {
@@ -346,25 +259,6 @@ const handleKeyUp = (event) => {
     }
 };
 
-// 메시지 표시
-function showMessage(chatMessage) {
-    const newMessage = {
-        message : chatMessage.message,
-        sendDate : chatMessage.sendDate,
-        userId : chatMessage.userId,
-        userName : chatMessage.userName,
-    }
-    
-    messageList.value.push(newMessage)
-
-    nextTick(() => {
-        const chat = chatField.value;
-        if (chat) {
-            chat.scrollTop = chat.scrollHeight;
-        }
-    });
-}
-
 const send = () => {
     if (!userInput.value.trim()) {
         return;
@@ -376,8 +270,8 @@ const send = () => {
         userId: myId.value,
     };
 
-    if (stompClient.value && stompClient.value.connected) {
-        stompClient.value.publish({
+    if (stompClient && stompClient.connected) {
+        stompClient.publish({
             destination: '/send/message',
             body: JSON.stringify(messageData)
         });
@@ -390,7 +284,7 @@ const quitChattingRoom = () => {
     quitDialog.value = false;
     chatMenu.value = false;
     
-    if (stompClient.value?.connected) {
+    if (stompClient?.connected) {
         const chatEventDTO = {
             roomId: chatRoomId.value,
             userId: myId.value
@@ -575,7 +469,7 @@ const quitChattingRoom = () => {
 }
 
 .last-item {
-    margin-bottom : 44px;
+    margin-bottom : 44px !important;
 }
 
 .list-footer-section {

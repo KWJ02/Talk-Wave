@@ -1,19 +1,22 @@
 export function formatDateToTime(date) {
     const dateArr = date.split("T");
-    const timeArr = dateArr[1].split(":");
+    if (dateArr.length !== 2) return ''; // 잘못된 포맷 처리
 
-    const time = Number(timeArr[0]);
+    const timeArr = dateArr[1].split(":");
+    let time = Number(timeArr[0]);
     const minute = Number(timeArr[1]);
 
     const amPm = time < 12 ? "오전" : "오후";
 
-    if(amPm === "오전") {
-        return amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
+    // 12시인 경우를 특별히 처리
+    if (time === 12) {
+        return amPm + " " + time.toString().padStart(2, "0") + ":" + minute.toString().padStart(2, "0");
     } else {
-        return time === 12 ? amPm + " " + time.toString().padStart(2,0) + ":" + minute.toString().padStart(2,0)
-                           : amPm + " " + (time % 12).toString().padStart(2,0) + ":" + minute.toString().padStart(2,0);
+        const adjustedTime = (time % 12) === 0 ? 12 : time % 12;  // 오후 12시는 12시로 표시되므로 12시를 그대로 둡니다.
+        return amPm + " " + adjustedTime.toString().padStart(2, "0") + ":" + minute.toString().padStart(2, "0");
     }
 }
+
 
 export function remainTime(date) {
     const now = new Date();

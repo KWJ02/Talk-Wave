@@ -9,11 +9,11 @@
 
             <div class="chat-room-list" v-for="(item, index) in chatRooms" :key="index" @click="activeItem(item.roomId)"
             :class="{
-                        'active-room': item.roomId === id,
+                        'active-room': item.roomId === activeRoomId,
                         'last-item': index === chatRooms.length - 1
                     }">
                 <div class="user-profile">
-                    <img :src="changeProfile(item.roomId === id)" alt="user"/>
+                    <img :src="changeProfile(item.roomId === activeRoomId)" alt="user"/>
                 </div>
 
                 <div class="chat-section">
@@ -35,36 +35,25 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, defineProps } from 'vue';
+import { ref, defineEmits, defineProps, inject, onMounted } from 'vue';
 import profile from '@/assets/images/icon_chat_user.svg'
 import activeProfile from '@/assets/images/icon_chat_user_active.svg'
 import { remainTime } from '@/plugins/formatDate';
+import axios from '@/plugins/axiosInstance';
 
-const props = defineProps({
-    id : {
-        type : Number,
-        required : true,
-    },
-    chatRooms: {
-        type: Array,
-        required: true
-    },
-    activeRoomId: {  // 추가
-        type: Number,
-        required: true
-    },
-    updateMessage: { // 부모 컴포넌트로부터 전달된 updateChatList를 props로 받기
-        type: Function,
-        required: true,
-    },
-    updateChatList: {
-        type: Function,
-        required: true,
+defineProps({
+    handleSendMessage: {
+        type : Function,
     }
 })
 
-const emit = defineEmits(['roomActive']);
-const activeRoomId = ref(props.chatRooms[0]?.roomId);
+const chatRooms = ref([]);
+const emit = defineEmits(['initRooms', 'roomActive', 'receiveMessage']);
+const activeRoomId = ref(null);
+const stompClient = inject('stompClient');
+const myId = ref("")
+const roomId = ref(null);
+
 
 const changeProfile = (isActive) => {
     return isActive ? activeProfile : profile;
@@ -74,6 +63,66 @@ const activeItem = (id) => {
     activeRoomId.value = id;
     emit('roomActive', { id: id })
 }
+
+onMounted(async () => {
+    myId.value = localStorage.getItem('talk-wave-id');
+
+    // STOMP 연결 상태 확인 함수
+    const waitForStompConnection = () => {
+        return new Promise((resolve) => {
+            const checkConnection = () => {
+                if (stompClient && stompClient.connected) {
+                    resolve();
+                } else {
+                    setTimeout(checkConnection, 100);
+                }
+            };
+            checkConnection();
+        });
+    };
+
+    try {
+        // STOMP 연결이 완료될 때까지 대기
+        await waitForStompConnection();
+
+        const response = await axios.get(`/chat/rooms?userId=${myId.value}`);
+        chatRooms.value = response.data;
+
+        emit('initRooms', {rooms : chatRooms.value})
+
+        if (chatRooms.value.length > 0) {
+            roomId.value = chatRooms.value[0].roomId;
+            activeRoomId.value = roomId.value;
+            emit('roomActive', { id: roomId.value });
+        }
+
+        // STOMP 연결이 확인된 후 구독 시작
+        chatRooms.value.forEach((room) => {
+            console.log(`Subscribing to: /room/${room.roomId}`); // 구독하는 주소 확인
+            stompClient.subscribe(`/room/${room.roomId}`, (message) => {
+                const receivedMessage = JSON.parse(message.body);
+                handleNewMessage(room.roomId, receivedMessage);
+                emit('receiveMessage', {id : room.roomId, data : receivedMessage})
+                
+            });
+        });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+const handleNewMessage = (roomId, message) => {
+    // 해당 방을 리스트의 맨 위로 이동
+    const roomIndex = chatRooms.value.findIndex((room) => room.roomId === roomId);
+    if (roomIndex !== -1) {
+        const [room] = chatRooms.value.splice(roomIndex, 1);
+        room.latestMessage = message.message;
+        
+        // 새로운 배열로 갱신하여 Vue가 변화를 감지하도록 함
+        chatRooms.value = [room, ...chatRooms.value];
+        console.log(chatRooms.value);
+    }
+};
 </script>
 
 <style scoped>
@@ -94,6 +143,7 @@ const activeItem = (id) => {
     border-radius : 16px;
     display : flex;
     align-items: center;
+    flex-shrink: 0;
     margin-bottom : 16px;
 }
 
