@@ -40,6 +40,7 @@ import profile from '@/assets/images/icon_chat_user.svg'
 import activeProfile from '@/assets/images/icon_chat_user_active.svg'
 import { remainTime } from '@/plugins/formatDate';
 import axios from '@/plugins/axiosInstance';
+import { useWebNotification } from '@vueuse/core';
 
 defineProps({
     handleSendMessage: {
@@ -53,7 +54,30 @@ const activeRoomId = ref(null);
 const stompClient = inject('stompClient');
 const myId = ref("")
 const roomId = ref(null);
+let { show } = useWebNotification();
 
+//  알림 로직
+
+show = ({title, body}) => {
+    if (!('Notification' in window)) {
+        console.error('This browser does not support notifications.');
+        return null;
+    }
+
+    // 알림 권한 확인
+    if (Notification.permission === 'granted') {
+        return new Notification(title, { body });
+    } else if (Notification.permission !== 'denied') {
+        // 권한 요청
+        return Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                return new Notification(title, { body });
+            }
+            return null;
+        });
+    }
+    return null;
+}
 
 const changeProfile = (isActive) => {
     return isActive ? activeProfile : profile;
@@ -101,6 +125,36 @@ onMounted(async () => {
             console.log(`Subscribing to: /room/${room.roomId}`); // 구독하는 주소 확인
             stompClient.subscribe(`/room/${room.roomId}`, (message) => {
                 const receivedMessage = JSON.parse(message.body);
+
+                if (document.hidden) { // 페이지 안보고있으면 알림
+                    const notificationPromise = show({
+                        title: receivedMessage.userName,
+                        body: receivedMessage.message,
+                    });
+
+                    // `show()`가 Promise를 반환하는 경우 처리
+                    if (notificationPromise instanceof Promise) {
+                        notificationPromise.then((notification) => {
+                            if (notification) {
+                                setTimeout(() => {
+                                    if (notification.close) {
+                                        notification.close(); // 알림 닫기
+                                    }
+                                }, 1000);
+                            }
+                        });
+                    } else if (notificationPromise) {
+                        // `show()`가 동기적으로 `Notification` 객체를 반환하는 경우
+                        setTimeout(() => {
+                            if (notificationPromise.close) {
+                                notificationPromise.close(); // 알림 닫기
+                            }
+                        }, 1000);
+                    } else {
+                        console.error('Failed to create notification.');
+                    }
+                }
+
                 handleNewMessage(room.roomId, receivedMessage);
                 emit('receiveMessage', {id : room.roomId, data : receivedMessage})
                 
