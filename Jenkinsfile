@@ -33,7 +33,7 @@ pipeline {
 
         stage('Copy dist') {
             steps {
-                sh 'docker cp /var/jenkins_home/workspace/talkwave-app/dist talkwave-app:/usr/share/nginx/web/dist'
+                sh 'docker cp /var/jenkins_home/workspace/talkwave-app/dist talkwave-app:/usr/share/nginx/web'
             }
         }
     }
