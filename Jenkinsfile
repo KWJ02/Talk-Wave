@@ -27,7 +27,7 @@ pipeline {
 
         stage('remove old dist') {
             steps {
-                sh 'docker exec -it --user root talkwave-app rm -rf /usr/share/nginx/web/dist'
+                sh 'docker exec --user root talkwave-app rm -rf /usr/share/nginx/web/dist'
             }
         }
 
