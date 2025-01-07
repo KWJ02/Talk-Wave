@@ -15,9 +15,7 @@
                 <div class="org-name">계급</div>
                 <select name="org" id="org" class="org-selector" v-model="orgSelector"
                     :class="{'error' : orgError}" @focus="orgError = false">
-                    <option value="president">회장</option>
-                    <option value="manager">부장</option>
-                    <option value="intern">인턴</option>
+                    <option v-for="dept in userList" :key="dept.deptId" :id="dept.deptId" :value="dept.deptId">{{ dept.name }}</option>
                 </select>
             </div>
 
@@ -29,13 +27,19 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, defineProps } from 'vue';
 import axios from '@/plugins/axiosInstance'
+
+defineProps({
+    userList: {
+        type: Array,
+        required: true,
+    }
+})
 
 const userId = ref("");
 const password = ref("");
 const nickName = ref("");
-// const deptLayer = ref([]);
 
 const idError = ref(false);
 const pwError = ref(false);
@@ -43,7 +47,6 @@ const nickError = ref(false);
 const orgError = ref(false);
 
 const orgSelector = ref(null);
-const deptId = ref(null);
 
 const emit = defineEmits(['sendEmit']);
 
@@ -83,20 +86,11 @@ const signIn = () => {
         return;
     }
 
-    switch(orgSelector.value) {
-        case "president" : deptId.value = 3
-            break;
-        case "manager" : deptId.value = 2
-            break;
-        case "intern" : deptId.value = 1
-            break;
-    }
-
     const jsonData = {
         "userId" : userId.value,
         "password" : password.value,
         "name" : nickName.value,
-        "deptId" : deptId.value,
+        "deptId" : orgSelector.value,
     }
 
     axios.post('/user/register', jsonData)

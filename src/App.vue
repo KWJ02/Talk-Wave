@@ -1,7 +1,7 @@
 <template>
     
         <sign-up-component v-if="pointer === 'SignUp'" @sendEmit="sendEmit"/>
-        <sign-in-component v-if="pointer === 'SignIn'" @sendEmit="sendEmit"/>
+        <sign-in-component v-if="pointer === 'SignIn'" @sendEmit="sendEmit" :userList="userList"/>
 
         <div class="root" :class="{ 'not-pointer' : pointer === 'SignUp' || pointer === 'SignIn' }">
             <menu-component v-if="pointer === 'Home' || pointer === 'Chat' || pointer==='Profile'" @goMenuItem="goMenuItem" @createRoom="createDialog"/>
@@ -73,6 +73,7 @@ const goMenuItem = (payload) => {
 const logout = (payload) => {
     localStorage.removeItem("talk-wave-id");
     pointer.value = payload.data;
+    window.location.href="/"
 }
 
 const createDialog = () => {
@@ -160,9 +161,6 @@ onUnmounted(() => {
 })
 
 provide('stompClient', stompClient);
-if(!stompClient.connected) {
-    stompClient.activate();
-}
 </script>
 
 <style scoped>

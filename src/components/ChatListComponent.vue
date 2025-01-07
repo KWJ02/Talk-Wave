@@ -5,7 +5,7 @@
             <input type="text" class="search" placeholder="검색"/>
         </div>
 
-        <div class="chat-room-list-container">
+        <div class="chat-room-list-container" v-if="chatRooms.length > 0">
 
             <div class="chat-room-list" v-for="(item, index) in chatRooms" :key="index" @click="activeItem(item.roomId)"
             :class="{
@@ -29,8 +29,8 @@
                     </div>
                 </div>
             </div>
-
         </div>
+        <div class="none-list" v-else>채팅방없음ㅋㅋ</div>
     </div>
 </template>
 
@@ -242,6 +242,13 @@ const handleNewMessage = (roomId, message) => {
     flex-direction: column;
     gap : 20px;
     overflow-y: scroll;
+}
+
+.none-list {
+    height : 500px;
+    display : flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .chat-room-list {
