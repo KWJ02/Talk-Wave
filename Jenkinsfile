@@ -8,29 +8,34 @@ pipeline {
             }
         }
 
-        // stage('npm install') {
-        //     steps {
-        //         sh 'npm install'
-        //     }
-        // }
+        stage('Copy .env') {
+            steps {
+                sh 'cp /var/jenkins_home/app/env/.env.talkwave /var/jenkins_home/workspace/talkwave-app/.env'
+            }
+        }
 
-        // stage('npm run build') {
-        //     steps {
-        //         sh 'npm run build'
-        //     }
-        // }
+       stage('Build') {
+            steps {
+                dir('/var/jenkins_home/workspace/talkwave-app') {
+                    sh '''
+                        npm install
+                        npm run build
+                    '''
+                }
+            }
+        }
 
-        // stage('remove old dist') {
-        //     steps {
-        //         sh 'docker exec -it --user root talkwave-app rm -rf /usr/share/nginx/web/dist'
-        //     }
-        // }
+        stage('remove old dist') {
+            steps {
+                sh 'docker exec -it --user root talkwave-app rm -rf /usr/share/nginx/web/dist'
+            }
+        }
 
-        // stage('Copy ') {
-        //     steps {
-        //         sh 'docker cp /var/jenkins_home/workspace/talkwave_app/dist talkwave-app:/usr/share/nginx/web/dist'
-        //     }
-        // }
+        stage('Copy dist') {
+            steps {
+                sh 'docker cp /var/jenkins_home/workspace/talkwave-app/dist talkwave-app:/usr/share/nginx/web/dist'
+            }
+        }
     }
 
     post {
