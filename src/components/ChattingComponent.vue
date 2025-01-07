@@ -129,8 +129,10 @@
             </div>
 
             <div v-if="showEmoticon" class="emotion-popup-container">
-                <div class="emoticon-overlay" v-if="emojiId">
-                    ㅎㅇ
+                <div class="emoticon-overlay-container" v-if="emojiId">
+                    <div class="emoticon-overlay">
+                        <img :src="selectEmojiUrl" alt="emoji" width="80px" height="80px" />
+                    </div>
                 </div>
                 <div class="emotion-popup-section">
                     <div class="popup-title-section">
@@ -146,7 +148,10 @@
                             :key="emoticon.id"
                             class="emoticon-item"
                             >
-                            <img :src="emoticon.url" alt="emoticon" @click="setSelectEmoji(emoticon.id)"/>
+                            <img :src="emoticon.url" alt="emoticon"
+                                width="80px" height="80px"
+                                @click="setSelectEmoji(emoticon.id, emoticon.url)"
+                                @dblclick="send"/>
                             </div>
                         </div>
                     </div>
@@ -165,12 +170,12 @@
                 @keydown="handleKeyDown"
                 @keyup="handleKeyUp"/>
 
-                <div class="img-container" style="background-color: #fff;">
-                    <img src="@/assets/images/icon_emotion.svg" alt="emotion" class="icon-img" @click="showEmoticon = true">
+                <div class="img-container" style="background-color: #fff;" @click="toggleShowEmoji">
+                    <img src="@/assets/images/icon_emotion.svg" alt="emotion" class="icon-img">
                 </div>
                 
-                <div class="img-container">
-                    <img src="@/assets/images/icon_upload.svg" alt="upload" class="icon-img" @click="send" />
+                <div class="img-container" @click="send">
+                    <img src="@/assets/images/icon_upload.svg" alt="upload" class="icon-img" />
                 </div>
             </div>
         </div>
@@ -184,6 +189,7 @@ import { formatDateToTime } from '@/plugins/formatDate';
 
 const myId = ref(null);
 const emojiId = ref(null);
+const selectEmojiUrl = ref("");
 const userInput = ref("");
 const chatField = ref(null);
 const chatMenu = ref(false);
@@ -295,6 +301,10 @@ const handleKeyUp = (event) => {
     }
 };
 
+const toggleShowEmoji = () => {
+    showEmoticon.value = showEmoticon.value ? false : true;
+}
+
 const send = () => {
     if(!emojiId.value && !userInput.value.trim()){
         return
@@ -347,8 +357,9 @@ const quitChattingRoom = () => {
     }
 }
 
-const setSelectEmoji = (id) => {
+const setSelectEmoji = (id, url) => {
     emojiId.value = id;
+    selectEmojiUrl.value = url;
 }
 </script>
 
@@ -359,6 +370,7 @@ const setSelectEmoji = (id) => {
     padding : 0 20px;
     display : flex;
     flex-direction: column;
+    min-width : 500px;
 }
 
 .chatting-container {
@@ -726,6 +738,7 @@ const setSelectEmoji = (id) => {
 
 .emotion-popup-section {
     position : absolute;
+    min-width : 400px;
     bottom : 88px;
     padding-right : 16px;
     width : 100%;
@@ -739,6 +752,7 @@ const setSelectEmoji = (id) => {
     display : flex;
     background-color: #fff;
     justify-content: space-between;
+    padding : 8px 16px;
 }
 
 .popup-title .cancel-btn {
@@ -747,28 +761,42 @@ const setSelectEmoji = (id) => {
 
 .emotion-popup {
     position : relative;
-    background-color: #fff;
-    border-radius : 0 0 16px 16px;
-    padding : 16px;
-    min-width : 400px;
+    padding-right : 16px;
     max-height : 300px;
     overflow-y: auto;
 }
 
-.emoticon-overlay {
+.emotion-popup::-webkit-scrollbar {
+    display : none;
+}
+
+.emoticon-overlay-container {
     position : absolute;
-    bottom : 350px;
+    width : 100%;
+    padding-right : 32px;
+    z-index : 9999;
+    bottom : 450px;
+}
+
+.emoticon-overlay {
+    display : flex;
+    height : 100px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.2);
 }
 
 .emoticon-grid {
     display: grid;
+    background-color: #fff;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
 }
 
-.emoticon-item img {
-    width : 80px;
-    height : 80px;
+.emoticon-item {
+    display : flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
 }
 </style>

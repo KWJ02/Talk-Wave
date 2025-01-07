@@ -7,16 +7,16 @@
                     <img src="@/assets/images/icon_home_active.svg" alt="home" width="28px" class="icon-img"/>
                 </div>
 
-                <div class="act-background" v-else v-ripple>
-                    <img src="@/assets/images/icon_home.svg" alt="home" width="28px" class="icon-img" @click="goHome"/>
+                <div class="act-background" v-else v-ripple @click="goHome">
+                    <img src="@/assets/images/icon_home.svg" alt="home" width="28px" class="icon-img"/>
                 </div>
                 
                 <div class="act-background" v-if="activeChat" :class="{'active' : activeChat}" v-ripple>
                     <img src="@/assets/images/icon_chat_active.svg" alt="chat" width="16px" class="icon-img" />
                 </div>
 
-                <div class="act-background" v-else v-ripple>
-                    <img src="@/assets/images/icon_chat.svg" alt="chat" width="16px" class="icon-img" @click="goChat"/>
+                <div class="act-background" v-else v-ripple @click="goChat">
+                    <img src="@/assets/images/icon_chat.svg" alt="chat" width="16px" class="icon-img"/>
                 </div>
                 
                 <div class="divider"></div>

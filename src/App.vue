@@ -169,7 +169,9 @@ onUnmounted(() => {
 });
 
 provide('stompClient', stompClient);
-stompClient.activate();
+if(!stompClient.connected) {
+    stompClient.activate();
+}
 </script>
 
 <style scoped>
