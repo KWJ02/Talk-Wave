@@ -283,18 +283,25 @@ const handleNewMessage = (roomId, message) => {
 }
 
 .chat-title-section {
+    width : 100%;
     display : flex;
     justify-content: space-between;
 }
 
 .chat-title {
     font-size : 1rem;
+    max-width : 150px;
     font-weight : bold;
+    white-space: nowrap;        /* 텍스트가 한 줄로만 표시되도록 설정 */
+    overflow: hidden;           /* 넘친 텍스트를 숨김 */
+    text-overflow: ellipsis;    /* 넘친 텍스트를 '...'으로 표시 */
 }
 
 .chat-time {
     font-size : 0.75rem;
     color : #B6BEC8;
+    flex-shrink: 0;
+    margin-left : 8px;
 }
 
 .chat-description-section {

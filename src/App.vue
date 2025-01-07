@@ -53,18 +53,7 @@ import ChatComponent from './components/ChatComponent.vue';
 import ProfileComponent from './components/ProfileComponent.vue';
 import { ref, onMounted, onUnmounted, provide } from 'vue';
 import axios from '@/plugins/axiosInstance';
-import { Client } from '@stomp/stompjs';
-
-const baseURL = process.env.VUE_APP_API_URL;
-const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
-
-const stompClient = new Client({
-    brokerURL: wsUrl,
-    reconnectDelay: 5000,
-    heartbeatIncoming: 4000,
-    heartbeatOutgoing: 4000,
-    maxReconnectAttempts: 5, 
-});
+import { stompClient } from '@/plugins/webSocket';
 
 const pointer = ref("SignUp");
 const roomName = ref("");
@@ -165,8 +154,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    stompClient.deactivate();
-});
+    if (stompClient.connected) {
+        stompClient.deactivate();
+    }
+})
 
 provide('stompClient', stompClient);
 if(!stompClient.connected) {

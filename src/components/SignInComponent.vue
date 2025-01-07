@@ -35,6 +35,7 @@ import axios from '@/plugins/axiosInstance'
 const userId = ref("");
 const password = ref("");
 const nickName = ref("");
+// const deptLayer = ref([]);
 
 const idError = ref(false);
 const pwError = ref(false);

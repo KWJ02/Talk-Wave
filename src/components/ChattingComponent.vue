@@ -138,7 +138,7 @@
                     <div class="popup-title-section">
                         <div class="popup-title">
                             <div class="content">이모티콘</div>
-                            <div class="cancel-btn" @click="showEmoticon = false">X</div>
+                            <div class="cancel-btn" @click="cancel">X</div>
                         </div>
                     </div>
                     <div class="emotion-popup">
@@ -302,7 +302,9 @@ const handleKeyUp = (event) => {
 };
 
 const toggleShowEmoji = () => {
+    emojiId.value = null;
     showEmoticon.value = showEmoticon.value ? false : true;
+    selectEmojiUrl.value = null;
 }
 
 const send = () => {
@@ -355,6 +357,12 @@ const quitChattingRoom = () => {
             currentSubscription.unsubscribe();
         }
     }
+}
+
+const cancel = () => {
+    emojiId.value = null;
+    showEmoticon.value = false;
+    selectEmojiUrl.value = "";
 }
 
 const setSelectEmoji = (id, url) => {
