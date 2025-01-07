@@ -9,7 +9,7 @@
             <chat-component v-if="pointer === 'Chat'" class="full-size"/>
             <profile-component v-if="pointer === 'Profile'" class="full-size" @logout="logout"/>
 
-            <v-dialog max-width="500" height="600" v-model="isCreate" persistent="true">
+            <v-dialog max-width="500" height="600" v-model="isCreate">
                 <v-card title="방 생성">
                     <v-card-text>
                         <input type="text" name="title" id="title" class="input-title" v-model.trim="roomName"
@@ -132,8 +132,11 @@ const create = () => {
             isCreate.value = false;
             roomName.value = "";
             selectUserList.value = [];
-
-            pointer.value = "Chat"
+            
+            pointer.value = "Home";
+            setTimeout(() => {
+                pointer.value = "Chat"
+            }, 100)
         })
         .catch((error) => {
             console.error(error);
@@ -149,6 +152,12 @@ onMounted(() => {
     axios.get('/dept')
         .then((res) => {
             userList.value = res.data
+            userList.value = userList.value.map(dept => {
+                return {
+                    ...dept,
+                    userInfoList: dept.userInfoList.filter(user => user.userId !== myId.value)
+                };
+            });
         })
         .catch((error) => {
             console.error(error);

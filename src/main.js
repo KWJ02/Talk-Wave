@@ -2,10 +2,12 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import vuetify from "./plugins/vuetify";
 import axiosInstance from './plugins/axiosInstance';
+import { createPinia } from 'pinia';
 
 import "@/assets/css/main.css";
 
 const app = createApp(App);
+const pinia = createPinia();
 app.config.globalProperties.$axios = axiosInstance;
 
 // 경고 메시지 비활성화
@@ -20,4 +22,5 @@ app.directive('focus', {
 });
 
 app.use(vuetify);  // Vuetify를 Vue 앱에 적용
+app.use(pinia);
 app.mount("#app");

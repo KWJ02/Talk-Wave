@@ -15,7 +15,6 @@ import { ref } from 'vue';
 const chatRooms = ref([]);
 const chattingId = ref(null);
 const newMessage = ref([])
-// const recentMessage = ref([]) // 특정 방에서 메세지 입력됐을때
 
 const initRooms = (payload) => {
     chatRooms.value = payload.rooms;

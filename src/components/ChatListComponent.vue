@@ -35,12 +35,15 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, defineProps, inject, onMounted } from 'vue';
+import { ref, defineEmits, defineProps, inject, onMounted, onUnmounted } from 'vue';
 import profile from '@/assets/images/icon_chat_user.svg'
 import activeProfile from '@/assets/images/icon_chat_user_active.svg'
 import { remainTime } from '@/plugins/formatDate';
 import axios from '@/plugins/axiosInstance';
 import { useWebNotification } from '@vueuse/core';
+import { useRoomStore } from '@/store/store';
+
+const roomStore = useRoomStore();
 
 defineProps({
     handleSendMessage: {
@@ -55,6 +58,7 @@ const stompClient = inject('stompClient');
 const myId = ref("")
 const roomId = ref(null);
 let { show } = useWebNotification();
+const subscriptions = ref(new Map());
 
 //  알림 로직
 
@@ -122,47 +126,61 @@ onMounted(async () => {
 
         // STOMP 연결이 확인된 후 구독 시작
         chatRooms.value.forEach((room) => {
-            console.log(`Subscribing to: /room/${room.roomId}`); // 구독하는 주소 확인
-            stompClient.subscribe(`/room/${room.roomId}`, (message) => {
-                const receivedMessage = JSON.parse(message.body);
+            if(!roomStore.isSubscribed(room.roomId)) {
+                const subscription = stompClient.subscribe(`/room/${room.roomId}`, (message) => {
+                    const receivedMessage = JSON.parse(message.body);
+                    //emojiUrl로 이모지 url 주니까 그냥 이거 바로 랜더해서 보여주면될듯
 
-                if (document.hidden) { // 페이지 안보고있으면 알림
-                    const notificationPromise = show({
-                        title: receivedMessage.userName,
-                        body: receivedMessage.message,
-                    });
+                    handleNewMessage(room.roomId, receivedMessage);
+                    emit('receiveMessage', {id : room.roomId, data : receivedMessage})
 
-                    // `show()`가 Promise를 반환하는 경우 처리
-                    if (notificationPromise instanceof Promise) {
-                        notificationPromise.then((notification) => {
-                            if (notification) {
-                                setTimeout(() => {
-                                    if (notification.close) {
-                                        notification.close(); // 알림 닫기
-                                    }
-                                }, 1000);
-                            }
+                    if (document.hidden) { // 페이지 안보고있으면 알림
+                        const notificationPromise = show({
+                            title: receivedMessage.userName,
+                            body: receivedMessage.emojiUrl ? 
+                                    receivedMessage.message ? `(이모티콘) ${receivedMessage.message}` : "(이모티콘)"
+                                    : receivedMessage.message,
                         });
-                    } else if (notificationPromise) {
-                        // `show()`가 동기적으로 `Notification` 객체를 반환하는 경우
-                        setTimeout(() => {
-                            if (notificationPromise.close) {
-                                notificationPromise.close(); // 알림 닫기
-                            }
-                        }, 1000);
-                    } else {
-                        console.error('Failed to create notification.');
-                    }
-                }
 
-                handleNewMessage(room.roomId, receivedMessage);
-                emit('receiveMessage', {id : room.roomId, data : receivedMessage})
-                
-            });
+                        // `show()`가 Promise를 반환하는 경우 처리
+                        if (notificationPromise instanceof Promise) {
+                            notificationPromise.then((notification) => {
+                                if (notification) {
+                                    setTimeout(() => {
+                                        if (notification.close) {
+                                            notification.close(); // 알림 닫기
+                                        }
+                                    }, 1000);
+                                }
+                            });
+                        } else if (notificationPromise) {
+                            // `show()`가 동기적으로 `Notification` 객체를 반환하는 경우
+                            setTimeout(() => {
+                                if (notificationPromise.close) {
+                                    notificationPromise.close(); // 알림 닫기
+                                }
+                            }, 1000);
+                        } else {
+                            console.error('Failed to create notification.');
+                        }
+                    }
+                });
+
+                subscriptions.value.set(room.roomId, subscription);
+                roomStore.addRoom(room.roomId);
+            }
         });
     } catch (error) {
         console.error('Error:', error);
     }
+});
+
+onUnmounted(() => {
+    subscriptions.value.forEach((subscription) => {
+        subscription.unsubscribe();
+    });
+    subscriptions.value.clear();
+    roomStore.clearRooms();
 });
 
 const handleNewMessage = (roomId, message) => {
@@ -170,11 +188,14 @@ const handleNewMessage = (roomId, message) => {
     const roomIndex = chatRooms.value.findIndex((room) => room.roomId === roomId);
     if (roomIndex !== -1) {
         const [room] = chatRooms.value.splice(roomIndex, 1);
-        room.latestMessage = message.message;
+        room.latestMessage = message.emojiUrl ? message.message ? `(이모티콘) ${message.message}` : "(이모티콘)" : message.message;
+        room.emojiUrl = message.emojiUrl;
+
+        console.log(message)
+        console.log(room);
         
         // 새로운 배열로 갱신하여 Vue가 변화를 감지하도록 함
         chatRooms.value = [room, ...chatRooms.value];
-        console.log(chatRooms.value);
     }
 };
 </script>

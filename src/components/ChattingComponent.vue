@@ -68,7 +68,7 @@
             </v-navigation-drawer>
         </v-layout>
 
-        <v-dialog max-width="500" height="240" v-model="quitDialog" persistent="true">
+        <v-dialog max-width="500" height="240" v-model="quitDialog">
             <v-card title="진짜 나갈거임?">
                 <v-card-text>
                     채팅창을 나가는 것에 대해 검정(檢定)해주실 수 있는지에 대하여 적절한지에 대해 질문 했을 경우 본 해병이 
@@ -118,11 +118,37 @@
                         <div class="chat-container" :class="myId === message.userId ? 'send' : 'receive'">
                             <div class="user-name" :class="myId === message.userId ? 'my-message' : ''"> {{ message.userName }}</div>
                             <div class="chat-content">
+                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="80px"/>
                                 <div v-html="message.message.replace(/\n/g, '<br/>')"></div>
                             </div>
                             <div class="chat-time">{{ message.formattedSendDate }}</div>
                         </div>
                         
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showEmoticon" class="emotion-popup-container">
+                <div class="emoticon-overlay" v-if="emojiId">
+                    ㅎㅇ
+                </div>
+                <div class="emotion-popup-section">
+                    <div class="popup-title-section">
+                        <div class="popup-title">
+                            <div class="content">이모티콘</div>
+                            <div class="cancel-btn" @click="showEmoticon = false">X</div>
+                        </div>
+                    </div>
+                    <div class="emotion-popup">
+                        <div class="emoticon-grid">
+                            <div
+                            v-for="(emoticon) in emoticonList"
+                            :key="emoticon.id"
+                            class="emoticon-item"
+                            >
+                            <img :src="emoticon.url" alt="emoticon" @click="setSelectEmoji(emoticon.id)"/>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -138,6 +164,10 @@
                 maxlength="512"
                 @keydown="handleKeyDown"
                 @keyup="handleKeyUp"/>
+
+                <div class="img-container" style="background-color: #fff;">
+                    <img src="@/assets/images/icon_emotion.svg" alt="emotion" class="icon-img" @click="showEmoticon = true">
+                </div>
                 
                 <div class="img-container">
                     <img src="@/assets/images/icon_upload.svg" alt="upload" class="icon-img" @click="send" />
@@ -153,15 +183,18 @@ import axios from '@/plugins/axiosInstance';
 import { formatDateToTime } from '@/plugins/formatDate';
 
 const myId = ref(null);
+const emojiId = ref(null);
 const userInput = ref("");
 const chatField = ref(null);
 const chatMenu = ref(false);
 const chatRoomId = ref(0)
 const roomName = ref("")
 const showSearch = ref(false);
+const showEmoticon = ref(false);
 const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
+const emoticonList = ref([]);
 
 const stompClient = inject('stompClient')
 
@@ -186,6 +219,10 @@ onMounted(() => {
     myId.value = localStorage.getItem("talk-wave-id");
     chatRoomId.value = props.id;
 
+    axios.get('/chat/emoji').then((response) => {
+        emoticonList.value = response.data;
+    })
+
     loadInitialData(chatRoomId.value);
 })
 
@@ -198,7 +235,6 @@ const formattedMessages = computed(() => {
 
 watch(() => props.id, async (newId) => {
     // 새로운 방 ID 설정
-    messageList.value = []
     loadInitialData(newId);
 });
 
@@ -260,14 +296,15 @@ const handleKeyUp = (event) => {
 };
 
 const send = () => {
-    if (!userInput.value.trim()) {
-        return;
+    if(!emojiId.value && !userInput.value.trim()){
+        return
     }
 
     const messageData = {
         roomId: chatRoomId.value,
         message: userInput.value.trim(),
         userId: myId.value,
+        emojiId : emojiId.value,
     };
 
     if (stompClient && stompClient.connected) {
@@ -276,7 +313,9 @@ const send = () => {
             body: JSON.stringify(messageData)
         });
 
+        showEmoticon.value = false;
         userInput.value = "";
+        emojiId.value = null;
     }
 };
 
@@ -306,6 +345,10 @@ const quitChattingRoom = () => {
             currentSubscription.unsubscribe();
         }
     }
+}
+
+const setSelectEmoji = (id) => {
+    emojiId.value = id;
 }
 </script>
 
@@ -531,6 +574,7 @@ const quitChattingRoom = () => {
     display : flex;
     flex-direction: column; /* 메시지를 위에서 아래로 배치 */
     overflow: hidden;
+    position: relative;
 }
 
 .v-layout {
@@ -614,6 +658,7 @@ const quitChattingRoom = () => {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 .chat-container {
@@ -646,6 +691,7 @@ const quitChattingRoom = () => {
 
 .receive .chat-content {
     display : flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: 16px 16px 16px 0;
@@ -659,6 +705,7 @@ const quitChattingRoom = () => {
 .send .chat-content {
     margin : 4px 0 4px 20px;
     display : flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: 16px 16px 0 16px;
@@ -675,5 +722,53 @@ const quitChattingRoom = () => {
 
 .send .chat-time {
     margin-left : auto;
+}
+
+.emotion-popup-section {
+    position : absolute;
+    bottom : 88px;
+    padding-right : 16px;
+    width : 100%;
+}
+
+.popup-title-section {
+    padding-right : 16px;
+}
+
+.popup-title {
+    display : flex;
+    background-color: #fff;
+    justify-content: space-between;
+}
+
+.popup-title .cancel-btn {
+    cursor: pointer;
+}
+
+.emotion-popup {
+    position : relative;
+    background-color: #fff;
+    border-radius : 0 0 16px 16px;
+    padding : 16px;
+    min-width : 400px;
+    max-height : 300px;
+    overflow-y: auto;
+}
+
+.emoticon-overlay {
+    position : absolute;
+    bottom : 350px;
+}
+
+.emoticon-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.emoticon-item img {
+    width : 80px;
+    height : 80px;
+    cursor: pointer;
 }
 </style>
