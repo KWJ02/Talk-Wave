@@ -165,6 +165,7 @@ provide('stompClient', stompClient);
 
 <style scoped>
 .root {
+    min-width : 1000px;
     height : 100vh;
     display : flex;
 }

@@ -61,7 +61,6 @@ let { show } = useWebNotification();
 const subscriptions = ref(new Map());
 
 //  알림 로직
-
 show = ({title, body}) => {
     if (!('Notification' in window)) {
         console.error('This browser does not support notifications.');
@@ -95,6 +94,10 @@ const activeItem = (id) => {
 onMounted(async () => {
     myId.value = localStorage.getItem('talk-wave-id');
 
+    if (!stompClient.connected) {
+        stompClient.activate();
+    }
+
     // STOMP 연결 상태 확인 함수
     const waitForStompConnection = () => {
         return new Promise((resolve) => {
@@ -102,6 +105,7 @@ onMounted(async () => {
                 if (stompClient && stompClient.connected) {
                     resolve();
                 } else {
+                    // 리스트 렌더링될 때, stomp 연결이 끊어져있으면 연결하고 Promise 객체 반환
                     setTimeout(checkConnection, 100);
                 }
             };
@@ -129,7 +133,6 @@ onMounted(async () => {
             if(!roomStore.isSubscribed(room.roomId)) {
                 const subscription = stompClient.subscribe(`/room/${room.roomId}`, (message) => {
                     const receivedMessage = JSON.parse(message.body);
-                    //emojiUrl로 이모지 url 주니까 그냥 이거 바로 랜더해서 보여주면될듯
 
                     handleNewMessage(room.roomId, receivedMessage);
                     emit('receiveMessage', {id : room.roomId, data : receivedMessage})
@@ -181,6 +184,10 @@ onUnmounted(() => {
     });
     subscriptions.value.clear();
     roomStore.clearRooms();
+
+    if (stompClient.connected) {
+        stompClient.deactivate();
+    }
 });
 
 const handleNewMessage = (roomId, message) => {
@@ -190,9 +197,8 @@ const handleNewMessage = (roomId, message) => {
         const [room] = chatRooms.value.splice(roomIndex, 1);
         room.latestMessage = message.emojiUrl ? message.message ? `(이모티콘) ${message.message}` : "(이모티콘)" : message.message;
         room.emojiUrl = message.emojiUrl;
-
-        console.log(message)
-        console.log(room);
+        // 보낸날짜는 현재 date 객체 대입
+        room.sendDate = new Date();
         
         // 새로운 배열로 갱신하여 Vue가 변화를 감지하도록 함
         chatRooms.value = [room, ...chatRooms.value];

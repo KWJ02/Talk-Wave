@@ -7,8 +7,8 @@ const wsUrl = `${baseURL.replace("http", "ws")}/ws-stomp`;
 export const stompClient = new Client({
     brokerURL: wsUrl,
     reconnectDelay: 5000,
-    heartbeatIncoming: 10000,
-    heartbeatOutgoing: 10000,
+    heartbeatIncoming: 0,
+    heartbeatOutgoing: 0,
 });
 
 // 초기 연결
