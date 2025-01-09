@@ -9,6 +9,7 @@ function createWindow() {
     height: 760,
     minWidth: 1200,
     minHeight: 760,
+    resizable: false,
     webPreferences: {
       contextIsolation: true,
       enableRemoteModule: false
@@ -36,6 +37,7 @@ ipcMain.on('notify', (event, { title, body }) => {
 // 앱 준비 완료 시 창 생성
 app.whenReady().then(() => {
   createWindow()
+  Menu.setApplicationMenu(null)  // 메뉴바 제거
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
