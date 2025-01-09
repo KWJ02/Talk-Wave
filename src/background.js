@@ -32,6 +32,13 @@ function createWindow() {
 ipcMain.on('notify', (event, { title, body }) => {
   const notification = new Notification({ title, body })
   notification.show()
+
+  // 3초 후 알림 자동 닫기
+  setTimeout(() => {
+    if (notification.close) {
+      notification.close();
+    }
+  }, 3000);
 })
 
 // 앱 준비 완료 시 창 생성
