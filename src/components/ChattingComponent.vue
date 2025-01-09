@@ -48,6 +48,11 @@
                         참여인원
                     </div>
                     <div class="list-count">{{ userList.length }}</div>
+                    <div class="room-invite-section">
+                        <div class="room-invite">
+                            초대
+                        </div>
+                    </div>
                 </div>
 
                 <ul class="user-list">
@@ -504,6 +509,20 @@ const setSelectEmoji = (id, url) => {
     margin-left : 12px;
     background-color: var(--primary);
     color : #fff;
+}
+
+.room-invite-section {
+    flex : 1;
+    display : flex;
+    justify-content: end;
+}
+
+.room-invite-section .room-invite {
+    border-radius: 12px;
+    padding : 4px 8px;
+    background-color: var(--primary);
+    color : #fff;
+    cursor: pointer;
 }
 
 .user-list {
