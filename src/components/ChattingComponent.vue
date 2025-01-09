@@ -188,7 +188,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, defineProps, watch, onMounted, defineEmits, inject, computed } from 'vue';
+import { ref, nextTick, defineProps, watch, onMounted, inject, computed } from 'vue';
 import axios from '@/plugins/axiosInstance';
 import { formatDateToTime } from '@/plugins/formatDate';
 
@@ -209,8 +209,6 @@ const emoticonList = ref([]);
 
 const stompClient = inject('stompClient')
 
-let currentSubscription = null;
-
 const messageList = ref([]);
 const userList = ref([])
 
@@ -223,8 +221,6 @@ const props = defineProps({
         type : Object,
     }
 })
-
-const emit = defineEmits(['sendMessage', 'quitChattingRoom'])
 
 onMounted(() => {
     myId.value = localStorage.getItem("talk-wave-id");
@@ -352,15 +348,11 @@ const quitChattingRoom = () => {
                 "Content-Type" : "application/json",
             }
         }).then(() => {
-            emit('quitChattingRoom', {roomId : chatRoomId.value})
+            window.location.reload();
         })
         .catch((error) => console.error(error))
 
         chatRoomId.value = null;
-        // 기존 구독 해제
-        if (currentSubscription) {
-            currentSubscription.unsubscribe();
-        }
     }
 }
 
