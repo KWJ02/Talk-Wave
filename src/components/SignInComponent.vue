@@ -4,12 +4,12 @@
         <div class="sign-in-container">
             <img src="@/assets/images/icon_crab.svg" alt="crab" @click="crabCry"/>
             <input type="text" name="id" id="id" placeholder="id" v-model.trim="userId"
-                :class="{'error' : idError}" @focus="idError = false" v-focus/>
+                :class="{'error' : idError}" @focus="idError = false" v-focus maxlength="255"/>
 
             <input type="text" name="password" id="password" placeholder="password" v-model.trim="password"
-                :class="{'error' : pwError}" @focus="pwError = false"/>
+                :class="{'error' : pwError}" @focus="pwError = false" maxlength="255"/>
             <input type="text" name="nick" id="nick" placeholder="nickName" v-model.trim="nickName"
-                :class="{'error' : nickError}" @focus="nickError = false"/>
+                :class="{'error' : nickError}" @focus="nickError = false" maxlength="20"/>
 
             <div class="org-container">
                 <div class="org-name">계급</div>
@@ -83,6 +83,25 @@ const signIn = () => {
 
     if(inValid) {
         alert("입력안한거있음");
+        return;
+    }
+
+    const regexId = userId.value.replace(/[^a-zA-Z0-9]/g, '')
+    const regexPw = password.value.replace(/[^a-zA-Z0-9]/g, '')
+
+    if(regexId !== userId.value) {
+        inValid = true;
+        idError.value = true;
+        alert("입력은 영어, 숫자만 가능")
+    }
+
+    if(regexPw !== password.value) {
+        inValid = true;
+        pwError.value = true;
+        alert("입력은 영어, 숫자만 가능")
+    }
+
+    if(inValid) {
         return;
     }
 

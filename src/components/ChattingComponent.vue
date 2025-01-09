@@ -590,7 +590,7 @@ const setSelectEmoji = (id, url) => {
     padding : 0 0 16px 16px;
     flex-grow: 1;
     background-color: #EDF0F9;
-    border-radius: 24px 0 24px 24px;
+    border-radius: 24px;
     display : flex;
     flex-direction: column; /* 메시지를 위에서 아래로 배치 */
     overflow: hidden;

@@ -3,9 +3,9 @@
         <div class="sign-up-container">
             <img src="@/assets/images/icon_crab.svg" alt="crab" @click="crabCry"/>
             <input type="text" name="id" id="id" placeholder="id" v-model.trim="userId" 
-                :class="{'error' : idError}" @focus="idError = false" v-focus/>
+                :class="{'error' : idError}" @focus="idError = false" v-focus maxlength="255"/>
             <input type="text" name="password" id="password" placeholder="password" v-model.trim="userPw"
-            :class="{'error' : pwError}" @focus="pwError = false" ref="pwInput" @keyup.enter="login"/>
+            :class="{'error' : pwError}" @focus="pwError = false" ref="pwInput" maxlength="255" @keyup.enter="login"/>
             <button @click="login">로그인</button>
             <button class="btn-sign-in" @click="signIn">회원가입</button>
         </div>

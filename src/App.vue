@@ -4,9 +4,9 @@
         <sign-in-component v-if="pointer === 'SignIn'" @sendEmit="sendEmit" :userList="userList"/>
 
         <div class="root" :class="{ 'not-pointer' : pointer === 'SignUp' || pointer === 'SignIn' }">
-            <menu-component v-if="pointer === 'Home' || pointer === 'Chat' || pointer==='Profile'" @goMenuItem="goMenuItem" @createRoom="createDialog"/>
+            <menu-component v-if="pointer === 'Home' || pointer === 'Chat' || pointer==='Profile'" @goMenuItem="goMenuItem" @createRoom="isCreate = true"/>
             <home-component v-if="pointer === 'Home'" class="full-size"/>
-            <chat-component v-if="pointer === 'Chat'" class="full-size"/>
+            <chat-component v-if="pointer === 'Chat'" class="full-size" :key="forceKey"/>
             <profile-component v-if="pointer === 'Profile'" class="full-size" @logout="logout"/>
 
             <v-dialog max-width="500" height="600" v-model="isCreate">
@@ -56,6 +56,7 @@ import axios from '@/plugins/axiosInstance';
 import { stompClient } from '@/plugins/webSocket';
 
 const pointer = ref("SignUp");
+const forceKey = ref(0);
 const roomName = ref("");
 const isCreate = ref(false);
 const userList = ref([])
@@ -74,10 +75,6 @@ const logout = (payload) => {
     localStorage.removeItem("talk-wave-id");
     pointer.value = payload.data;
     window.location.href="/"
-}
-
-const createDialog = () => {
-    isCreate.value = true;
 }
 
 const getUserNameById = (userId) => {
@@ -123,10 +120,7 @@ const create = () => {
             roomName.value = "";
             selectUserList.value = [];
             
-            pointer.value = "Home";
-            setTimeout(() => {
-                pointer.value = "Chat"
-            }, 100)
+            forceKey.value++; // chat-component key값 변경 -> chat-component만 재렌더링
         })
         .catch((error) => {
             console.error(error);
