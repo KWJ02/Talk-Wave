@@ -63,7 +63,6 @@ const subscriptions = ref(new Map());
 //  알림 로직
 show = ({title, body}) => {
     if (!('Notification' in window)) {
-        console.error('This browser does not support notifications.');
         return null;
     }
 
@@ -164,7 +163,7 @@ onMounted(async () => {
                                 }
                             }, 1000);
                         } else {
-                            console.error('Failed to create notification.');
+                            //
                         }
                     }
                 });
@@ -174,7 +173,7 @@ onMounted(async () => {
             }
         });
     } catch (error) {
-        console.error('Error:', error);
+
     }
 });
 

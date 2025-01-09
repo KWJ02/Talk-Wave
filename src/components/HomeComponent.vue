@@ -61,8 +61,8 @@ onMounted(() => {
         .then((res) => {
             deptLayer.value = res.data;
         })
-        .catch((error) => {
-            console.error(error);
+        .catch(() => {
+            //
         });
 });
 </script>
