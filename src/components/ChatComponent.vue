@@ -1,6 +1,6 @@
 <template>
     <div class="root-chat">
-        <chat-list-component @roomActive="sendId" @initRooms="initRooms" @receiveMessage="receiveMessage" />
+        <chat-list-component @roomActive="sendId" @initRooms="initRooms" @receiveMessage="receiveMessage" :key="listForceKey"/>
 
         <chatting-component v-if="chattingId" :id="chattingId"
             @quitChattingRoom="updateChatList" :newMessage="newMessage" />
@@ -14,7 +14,8 @@ import { ref } from 'vue';
 
 const chatRooms = ref([]);
 const chattingId = ref(null);
-const newMessage = ref([])
+const newMessage = ref([]);
+const listForceKey = ref(0);
 
 const initRooms = (payload) => {
     chatRooms.value = payload.rooms;
@@ -27,6 +28,7 @@ const sendId = (payload) => {
 const updateChatList = (payload) => {
     const roomId = payload.roomId;
     chatRooms.value = chatRooms.value.filter((room) => room.roomId !== roomId);
+    listForceKey.value++;
 }
 
 const receiveMessage = (payload) => {
