@@ -7,6 +7,7 @@
 
         <!-- 부서 목록 -->
         <div class="roster">Sucker Roster</div>
+        <div class="inform">(Ctrl + R = 새로고침)<br>사용자, 방 갱신안되면 새로고침 ㄱ</div>
         <div class="dept-container">
             <div class="dept-grid-container">
                 <div class="grid-item" v-for="r in deptLayer" :key="r.deptId">
@@ -61,9 +62,7 @@ onMounted(() => {
         .then((res) => {
             deptLayer.value = res.data;
         })
-        .catch(() => {
-            //
-        });
+        .catch();
 });
 </script>
 
@@ -90,6 +89,11 @@ onMounted(() => {
 .roster {
     font-size: 2rem;
     font-weight: bold;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.inform {
     text-align: center;
     margin-bottom: 32px;
 }

@@ -126,9 +126,7 @@ const create = () => {
 
             window.location.reload();
         })
-        .catch(() => {
-            //
-        })
+        .catch();
 }
 
 onMounted(() => {
@@ -147,8 +145,8 @@ onMounted(() => {
                 };
             });
         })
-        .catch(() => {
-            //
+        .catch((error) => {
+            console.error(error);
         })
 })
 
