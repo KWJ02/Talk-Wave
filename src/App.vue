@@ -1,7 +1,7 @@
 <template>
     
         <sign-up-component v-if="pointer === 'SignUp'" @sendEmit="sendEmit"/>
-        <sign-in-component v-if="pointer === 'SignIn'" @sendEmit="sendEmit" :userList="userList"/>
+        <sign-in-component v-if="pointer === 'SignIn'" :userList="userList"/>
 
         <div class="root" :class="{ 'not-pointer' : pointer === 'SignUp' || pointer === 'SignIn' }">
             <menu-component v-if="pointer === 'Home' || pointer === 'Chat' || pointer==='Profile'" @goMenuItem="goMenuItem" @createRoom="isCreate = true" />
@@ -126,8 +126,8 @@ const create = () => {
 
             window.location.reload();
         })
-        .catch((error) => {
-            console.error(error);
+        .catch(() => {
+            //
         })
 }
 
@@ -147,8 +147,8 @@ onMounted(() => {
                 };
             });
         })
-        .catch((error) => {
-            console.error(error);
+        .catch(() => {
+            //
         })
 })
 

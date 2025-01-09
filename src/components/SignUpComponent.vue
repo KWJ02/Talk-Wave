@@ -51,7 +51,7 @@ const login = () => {
             localStorage.setItem("talk-wave-id", userId.value);
             goHome()
         })
-        .catch((error) => alert("로그인 실패~!" + error));
+        .catch();
 }
 
 const signIn = () => {

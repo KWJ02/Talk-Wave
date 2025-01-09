@@ -269,8 +269,8 @@ const loadInitialData = (id) => {
                 }
             });
         })
-        .catch((error) => {
-            console.error(error);
+        .catch(() => {
+            //
         });
 };
 
@@ -350,7 +350,7 @@ const quitChattingRoom = () => {
         }).then(() => {
             window.location.reload();
         })
-        .catch((error) => console.error(error))
+        .catch()
 
         chatRoomId.value = null;
     }

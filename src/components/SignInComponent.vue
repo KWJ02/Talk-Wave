@@ -115,10 +115,9 @@ const signIn = () => {
     axios.post('/user/register', jsonData)
     .then(() => {
         alert("회원가입 성공!");
-        sendEmit("SignUp");
-    }).catch((error) => {
+        window.location.reload();
+    }).catch(() => {
         alert("회원가입 실패~!");
-        console.error(error)
     })
 }
 </script>
