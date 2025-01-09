@@ -781,7 +781,7 @@ const setSelectEmoji = (id, url) => {
 .emotion-popup {
     position : relative;
     padding-right : 16px;
-    max-height : 300px;
+    max-height : 200px;
     overflow-y: auto;
 }
 
@@ -794,7 +794,7 @@ const setSelectEmoji = (id, url) => {
     width : 100%;
     padding-right : 32px;
     z-index : 9999;
-    bottom : 450px;
+    bottom : 350px;
 }
 
 .emoticon-overlay {
