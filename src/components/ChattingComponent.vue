@@ -123,7 +123,7 @@
                         <div class="chat-container" :class="myId === message.userId ? 'send' : 'receive'">
                             <div class="user-name" :class="myId === message.userId ? 'my-message' : ''"> {{ message.userName }}</div>
                             <div class="chat-content">
-                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="80px"/>
+                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="160px"/>
                                 <div v-html="message.message.replace(/\n/g, '<br/>')"></div>
                             </div>
                             <div class="chat-time">{{ message.formattedSendDate }}</div>
