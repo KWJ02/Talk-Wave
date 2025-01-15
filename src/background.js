@@ -1,7 +1,9 @@
-import { app, BrowserWindow, ipcMain, Notification } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, Menu } from 'electron'
 import path from 'path'
 
 let mainWindow
+
+Menu.setApplicationMenu(null)
 
 function createWindow() {
   mainWindow = new BrowserWindow({

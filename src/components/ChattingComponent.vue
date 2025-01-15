@@ -167,6 +167,7 @@
                 <v-textarea
                     v-model="userInput"
                     class="chat-input" 
+                    ref="chatText"
                     :rows="textareaRows"
                     auto-grow
                     variant="none"
@@ -198,6 +199,7 @@ const emojiId = ref(null);
 const selectEmojiUrl = ref("");
 const userInput = ref("");
 const chatField = ref(null);
+const chatText = ref(null);
 const chatMenu = ref(false);
 const chatRoomId = ref(0)
 const roomName = ref("")
@@ -286,21 +288,34 @@ watch(showSearch, (isShow) => {
 
 const adjustTextareaHeight = () => {
     const lines = (userInput.value.match(/\n/g) || []).length + 1;
-    textareaRows.value = Math.min(Math.max(lines, 1), 5); // 최소 1줄, 최대 5줄
+    textareaRows.value = Math.min(Math.max(lines, 1), 5);
+    nextTick(() => {
+        if (chatText.value) {
+            chatText.value.scrollTop = chatText.value.scrollHeight;
+        }
+    });
 };
 
-const handleKeyUp = (event) => {
+const handleKeyDown = (event) => {
+    if (!event.shiftKey && event.key === "Enter") {
+        event.preventDefault(); // 줄바꿈 방지
+        send();
+        textareaRows.value = 1; // Reset rows after sending
+        return;
+    }
+    
     if (event.shiftKey && event.key === "Enter") {
         // Shift+Enter -> 줄바꿈 (기본 동작 유지)
         adjustTextareaHeight();
         return;
     }
+};
 
-    if (!event.shiftKey && event.key === "Enter") {
-        // Enter만 -> send 함수 호출
-        event.preventDefault(); // 줄바꿈 방지
-        send();
-        textareaRows.value = 1; // Reset rows after sending
+const handleKeyUp = (event) => {
+    // Enter 키 처리를 handleKeyDown으로 이동했으므로 여기서는 필요 없음
+    if (event.shiftKey && event.key === "Enter") {
+        adjustTextareaHeight();
+        return;
     }
 };
 
@@ -329,6 +344,7 @@ const send = () => {
         textareaRows.value = 1; // Reset rows after sending
     }
 };
+
 const toggleShowEmoji = () => {
     emojiId.value = null;
     showEmoticon.value = showEmoticon.value ? false : true;
