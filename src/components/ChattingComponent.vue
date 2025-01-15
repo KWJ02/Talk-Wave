@@ -165,15 +165,16 @@
 
             <div class="input-field">
                 <v-textarea
-                v-model="userInput"
-                class="chat-input" 
-                rows="1"
-                auto-grow
-                variant="none"
-                hide-details
-                maxlength="512"
-                @keydown="handleKeyDown"
-                @keyup="handleKeyUp"/>
+                    v-model="userInput"
+                    class="chat-input" 
+                    :rows="textareaRows"
+                    auto-grow
+                    variant="none"
+                    hide-details
+                    maxlength="512"
+                    @keydown="handleKeyDown"
+                    @keyup="handleKeyUp"
+                    @input="adjustTextareaHeight"/>
 
                 <div class="img-container" style="background-color: #fff;" @click="toggleShowEmoji">
                     <img src="@/assets/images/icon_emotion.svg" alt="emotion" class="icon-img">
@@ -206,6 +207,7 @@ const searchQuery = ref("");
 const searchInput = ref(null);
 const quitDialog = ref(false);
 const emoticonList = ref([]);
+const textareaRows = ref(1);
 
 const stompClient = inject('stompClient')
 
@@ -280,18 +282,17 @@ watch(showSearch, (isShow) => {
             searchInput.value?.focus();
         })
     }
-})
+});
 
-const handleKeyDown = (event) => {
-  if (!event.shiftKey && event.key === "Enter") {
-    // Enter키만 눌렀을 때 줄바꿈을 방지하고 기본 동작을 막습니다.
-    event.preventDefault();
-  }
+const adjustTextareaHeight = () => {
+    const lines = (userInput.value.match(/\n/g) || []).length + 1;
+    textareaRows.value = Math.min(Math.max(lines, 1), 5); // 최소 1줄, 최대 5줄
 };
 
 const handleKeyUp = (event) => {
     if (event.shiftKey && event.key === "Enter") {
         // Shift+Enter -> 줄바꿈 (기본 동작 유지)
+        adjustTextareaHeight();
         return;
     }
 
@@ -299,15 +300,11 @@ const handleKeyUp = (event) => {
         // Enter만 -> send 함수 호출
         event.preventDefault(); // 줄바꿈 방지
         send();
+        textareaRows.value = 1; // Reset rows after sending
     }
 };
 
-const toggleShowEmoji = () => {
-    emojiId.value = null;
-    showEmoticon.value = showEmoticon.value ? false : true;
-    selectEmojiUrl.value = null;
-}
-
+// Modify send function
 const send = () => {
     if(!emojiId.value && !userInput.value.trim()){
         return
@@ -329,8 +326,14 @@ const send = () => {
         showEmoticon.value = false;
         userInput.value = "";
         emojiId.value = null;
+        textareaRows.value = 1; // Reset rows after sending
     }
 };
+const toggleShowEmoji = () => {
+    emojiId.value = null;
+    showEmoticon.value = showEmoticon.value ? false : true;
+    selectEmojiUrl.value = null;
+}
 
 const quitChattingRoom = () => {
     quitDialog.value = false;
@@ -659,8 +662,7 @@ const setSelectEmoji = (id, url) => {
     resize: none;
     border-radius: 16px;
     background-color: #fff;
-    margin-right : 16px;
-    max-height : calc(1.5em * 5);
+    margin-right: 16px;
     overflow-y: auto;
 }
 
