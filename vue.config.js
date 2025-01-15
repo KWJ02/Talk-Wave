@@ -6,7 +6,7 @@ module.exports = {
         appId: 'talkwave.app',
         productName: 'TalkWave',
         win: {
-          icon: 'build/icon.ico',
+          icon: 'public/icon_crab.png',
           target: [
             {
               target: 'nsis',

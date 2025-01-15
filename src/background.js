@@ -10,10 +10,14 @@ function createWindow() {
     minWidth: 1200,
     minHeight: 760,
     resizable : false,
+    useContentSize :true,
+    center:true,
     webPreferences: {
       contextIsolation: true,
       enableRemoteModule: false
-    }
+    },
+    autoHideMenuBar:true,
+    icon: path.join(__dirname, '../public/icon_crab.png'),
   })
 
   // 개발/프로덕션 환경에 따른 로드 방식 분기
