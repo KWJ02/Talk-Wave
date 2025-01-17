@@ -11,14 +11,15 @@ function createWindow() {
     height: 760,
     minWidth: 1200,
     minHeight: 760,
-    resizable : false,
-    useContentSize :true,
-    center:true,
+    resizable: false,
+    useContentSize: true,
+    center: true,
     webPreferences: {
       contextIsolation: true,
-      enableRemoteModule: false
+      enableRemoteModule: false,
+      preload: path.join(__dirname, 'preload.js')  // preload 스크립트 추가
     },
-    autoHideMenuBar:true,
+    autoHideMenuBar: true,
     icon: path.join(__dirname, '../public/icon_crab.png'),
   })
 
@@ -32,12 +33,23 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+
+  mainWindow.on('focus', () => {
+    if (mainWindow) {
+      mainWindow.flashFrame(false)  // setFlashFrame 대신 flashFrame 사용
+    }
+  })
 }
 
 // 알림 이벤트 처리
 ipcMain.on('notify', (event, { title, body }) => {
   const notification = new Notification({ title, body })
   notification.show()
+
+  // 현재 윈도우가 포커스되어 있지 않을 때만 깜빡임 시작
+  if (mainWindow && !mainWindow.isFocused()) {
+    mainWindow.flashFrame(true)  // setFlashFrame 대신 flashFrame 사용
+  }
 })
 
 // 앱 준비 완료 시 창 생성
