@@ -110,7 +110,9 @@
             <div ref="chatField" class="chat-field">
                 <div class="recent-message" v-if="isScroll">
                     <div class="message" @click="goDown">
-                        {{ messageList.length > 0 ? `${messageList.at(-1).userName} : ${messageList.at(-1).message}`
+                        {{ messageList.length > 0 ? 
+                            messageList.at(-1).emojiUrl ? `${messageList.at(-1).userName} : (이모티콘) ${messageList.at(-1).message}`
+                                                 : `${messageList.at(-1).userName} : ${messageList.at(-1).message}`
                             : `${messageList[0].userName} : ${messageList[0].message}` }}
                     </div>
                 </div>
@@ -240,10 +242,10 @@ const handleScroll = () => {
     if (chatField.value) {
         const { scrollTop, scrollHeight, clientHeight } = chatField.value;
 
-        // 스크롤이 바닥에 닿았는지 확인 (여유 1px)
-        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) <= 1;
+        // 스크롤이 떠있는 정도
+        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) <= 300;
 
-        // 스크롤이 바닥에 있으면 isScroll을 false로 설정
+        // 스크롤이 301px이상 떠있으면
         if (isAtBottom) {
             isScroll.value = false;
             isFloat.value = false;

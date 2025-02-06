@@ -2,7 +2,7 @@
     <div class="back" @click="sendEmit('SignUp')">뒤로가기</div>
     <div class="sign-in-root">
         <div class="sign-in-container">
-            <img src="@/assets/images/icon_crab.svg" alt="crab" @click="crabCry"/>
+            <img src="@/assets/images/icon_crab.svg" alt="crab"/>
             <input type="text" name="id" id="id" placeholder="id" v-model.trim="userId"
                 :class="{'error' : idError}" @focus="idError = false" v-focus maxlength="255"/>
 
@@ -52,10 +52,6 @@ const emit = defineEmits(['sendEmit']);
 
 const sendEmit = (sendData) => {
     emit('sendEmit', {data : sendData})
-}
-
-const crabCry = () => {
-    alert("나가쇼");
 }
 
 const signIn = () => {
