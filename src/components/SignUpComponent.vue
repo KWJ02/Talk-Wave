@@ -1,7 +1,7 @@
 <template>
     <div class="sign-up-root">
         <div class="sign-up-container">
-            <img src="@/assets/images/icon_crab.svg" alt="crab" @click="crabCry"/>
+            <img src="@/assets/images/icon_crab.svg" alt="crab"/>
             <input type="text" name="id" id="id" placeholder="id" v-model.trim="userId" 
                 :class="{'error' : idError}" @focus="idError = false" v-focus maxlength="255"/>
             <input type="text" name="password" id="password" placeholder="password" v-model.trim="userPw"
@@ -56,10 +56,6 @@ const login = () => {
 
 const signIn = () => {
     emit('sendEmit', {data : "SignIn"});
-}
-
-const crabCry = () => {
-    alert("꺼지쇼");
 }
 </script>
 
