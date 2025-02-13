@@ -437,8 +437,8 @@ const setSelectEmoji = (id, url) => {
 const sanitizeMessage = (message) => {
     return message
         .replace(/\n/g, '<br/>')        // 줄바꿈을 <br/>로 치환
-        .replace(/</g, '&lt;')          // <를 &lt;로 치환
-        .replace(/>/g, '&gt;');         // >를 &gt;로 치환
+    // .replace(/</g, '&lt;')          // <를 &lt;로 치환
+    // .replace(/>/g, '&gt;');         // >를 &gt;로 치환
 }
 </script>
 
