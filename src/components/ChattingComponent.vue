@@ -110,9 +110,10 @@
             <div ref="chatField" class="chat-field">
                 <div class="recent-message" v-if="isScroll">
                     <div class="message" @click="goDown">
-                        {{ messageList.length > 0 ? 
-                            messageList.at(-1).emojiUrl ? `${messageList.at(-1).userName} : (이모티콘) ${messageList.at(-1).message}`
-                                                 : `${messageList.at(-1).userName} : ${messageList.at(-1).message}`
+                        {{ messageList.length > 0 ?
+                            messageList.at(-1).emojiUrl ? `${messageList.at(-1).userName} : (이모티콘)
+                        ${messageList.at(-1).message}`
+                                : `${messageList.at(-1).userName} : ${messageList.at(-1).message}`
                             : `${messageList[0].userName} : ${messageList[0].message}` }}
                     </div>
                 </div>
@@ -129,10 +130,11 @@
                         <div class="chat-container" :class="myId === message.userId ? 'send' : 'receive'">
                             <div class="user-name" :class="myId === message.userId ? 'my-message' : ''">{{
                                 message.userName }}</div>
-                            <div class="chat-content" :class="{ 'emoji-content': message.emojiUrl && !message.message, 'mixed-content': message.emojiUrl && message.message }">
+                            <div class="chat-content"
+                                :class="{ 'emoji-content': message.emojiUrl && !message.message, 'mixed-content': message.emojiUrl && message.message }">
                                 <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="160px" />
                                 <div v-if="message.message" :class="{ 'text-with-emoji': message.emojiUrl }">
-                                    <div class="html-message" v-html="message.message.replace(/\n/g, '<br/>')"></div>
+                                    <div class="html-message" v-html="sanitizeMessage(message.message)"></div>
                                 </div>
                             </div>
                             <div class="chat-time">{{ message.formattedSendDate }}</div>
@@ -429,6 +431,13 @@ const cancel = () => {
 const setSelectEmoji = (id, url) => {
     emojiId.value = id;
     selectEmojiUrl.value = url;
+}
+
+const sanitizeMessage = (message) => {
+    return message
+        .replace(/\n/g, '<br/>')        // 줄바꿈을 <br/>로 치환
+        .replace(/</g, '&lt;')          // <를 &lt;로 치환
+        .replace(/>/g, '&gt;');         // >를 &gt;로 치환
 }
 </script>
 
@@ -872,7 +881,7 @@ const setSelectEmoji = (id, url) => {
 .send .chat-content .text-with-emoji {
     width: 100%;
     color: #fff;
-    display : flex;
+    display: flex;
     justify-content: end;
 }
 
@@ -886,7 +895,7 @@ const setSelectEmoji = (id, url) => {
 .receive .chat-content .text-with-emoji {
     width: 100%;
     color: #464748;
-    display : flex;
+    display: flex;
     justify-content: start;
 }
 
