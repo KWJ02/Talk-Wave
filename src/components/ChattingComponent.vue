@@ -170,7 +170,7 @@
 
             <div class="input-field">
                 <v-textarea v-model="userInput" class="chat-input" ref="chatText" :rows="textareaRows" auto-grow
-                    variant="none" hide-details maxlength="512" @keydown="handleKeyDown" @keyup="handleKeyUp"
+                    variant="none" hide-details @keydown="handleKeyDown" @keyup="handleKeyUp"
                     @input="adjustTextareaHeight" />
 
                 <div class="img-container" style="background-color: #fff;" @click="toggleShowEmoji">
