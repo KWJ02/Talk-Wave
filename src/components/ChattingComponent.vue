@@ -699,7 +699,9 @@ const sanitizeMessage = (message) => {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 8px 0 16px 0;
+    flex-grow: 1;
 }
 
 .chat {
