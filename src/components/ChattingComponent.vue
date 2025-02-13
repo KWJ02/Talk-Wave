@@ -132,8 +132,7 @@
                                 message.userName }}</div>
                             <div class="chat-content"
                                 :class="{ 'emoji-content': message.emojiUrl && !message.message, 'mixed-content': message.emojiUrl && message.message }">
-                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" max-width="160px"
-                                    max-height="200px" />
+                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="140px" />
                                 <div v-if="message.message" :class="{ 'text-with-emoji': message.emojiUrl }">
                                     <div class="html-message" v-html="sanitizeMessage(message.message)"></div>
                                 </div>
@@ -437,8 +436,8 @@ const setSelectEmoji = (id, url) => {
 const sanitizeMessage = (message) => {
     return message
         .replace(/\n/g, '<br/>')        // 줄바꿈을 <br/>로 치환
-    // .replace(/</g, '&lt;')          // <를 &lt;로 치환
-    // .replace(/>/g, '&gt;');         // >를 &gt;로 치환
+        .replace(/</g, '&lt;')          // <를 &lt;로 치환
+        .replace(/>/g, '&gt;');         // >를 &gt;로 치환
 }
 </script>
 
