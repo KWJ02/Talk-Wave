@@ -132,7 +132,8 @@
                                 message.userName }}</div>
                             <div class="chat-content"
                                 :class="{ 'emoji-content': message.emojiUrl && !message.message, 'mixed-content': message.emojiUrl && message.message }">
-                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" width="160px" />
+                                <img v-if="message.emojiUrl" :src="message.emojiUrl" alt="emoji" max-width="160px"
+                                    max-height="200px" />
                                 <div v-if="message.message" :class="{ 'text-with-emoji': message.emojiUrl }">
                                     <div class="html-message" v-html="sanitizeMessage(message.message)"></div>
                                 </div>
